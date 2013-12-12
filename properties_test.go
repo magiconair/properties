@@ -35,9 +35,9 @@ func (l *LoadSuite) TestUnicodeLiteralInKey(c *C) {
 	testKeyValue(c, "key\\U2318 = value", "key⌘", "value")
 }
 
-// func (l *LoadSuite) TestEscapedCharsInValue(c *C) {
-// 	testKeyValue(c, "key = v\\ a\\:lu\\=e", "key", "v a:lu=e")
-// }
+func (l *LoadSuite) TestEscapedCharsInValue(c *C) {
+	testKeyValue(c, "key = v\\ a\\:lu\\=e\\n\\r\\t", "key", "v a:lu=e\n\r\t")
+}
 
 // func (l *LoadSuite) TestMultilineValue(c *C) {
 // 	input := "key = valueA,\\\n    valueB"

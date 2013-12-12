@@ -58,6 +58,7 @@ type lexer struct {
 	start   Pos       // start position of this item
 	width   Pos       // width of last rune read from input
 	lastPos Pos       // position of most recent item returned by nextItem
+	runes   []rune    // scanned runes for this item
 	items   chan item // channel of scanned items
 }
 
@@ -87,20 +88,21 @@ func (l *lexer) backup() {
 
 // emit passes an item back to the client.
 func (l *lexer) emit(t itemType) {
-	l.emitWithValue(t, l.input[l.start:l.pos])
-}
-
-// emitWithValue passes an item with a specific value back to the client.
-func (l *lexer) emitWithValue(t itemType, value string) {
-	item := item{t, l.start, value}
+	item := item{t, l.start, string(l.runes)}
 	// log.Printf("lex.emit: %s", item)
 	l.items <- item
 	l.start = l.pos
+	l.runes = l.runes[:0]
 }
 
 // ignore skips over the pending input before this point.
 func (l *lexer) ignore() {
 	l.start = l.pos
+}
+
+// appends the rune to the current value
+func (l *lexer) appendRune(r rune) {
+	l.runes = append(l.runes, r)
 }
 
 // accept consumes the next rune if it's from the valid set.
@@ -117,12 +119,6 @@ func (l *lexer) acceptRun(valid string) {
 	for strings.IndexRune(valid, l.next()) >= 0 {
 	}
 	l.backup()
-}
-
-// accept until consumes runes until a termination rune.
-func (l *lexer) acceptUntil(term rune) {
-	for r := l.next(); r != eof && r != term; {
-	}
 }
 
 // hasText returns true if the current parsed text is not empty.
@@ -156,6 +152,7 @@ func lex(input string) *lexer {
 	l := &lexer{
 		input: input,
 		items: make(chan item),
+		runes: make([]rune, 0, 32),
 	}
 	go l.run()
 	return l
@@ -171,7 +168,6 @@ func (l *lexer) run() {
 // state functions
 // TODO: handle comments
 // TODO: handle multi-line values
-// TODO: handle unicode literals
 
 // lexKey scans the key up to a delimiter
 func lexKey(l *lexer) stateFn {
@@ -180,51 +176,30 @@ func lexKey(l *lexer) stateFn {
 		return nil
 	}
 
-	runes := make([]rune, 0, 32)
-
 Loop:
 	for {
 		switch r := l.next(); {
 
-		case r == '\\':
-			switch r = l.next(); {
-
-			// escaped key termination chars
-			case r == ' ' || r == ':' || r == '=':
-				runes = append(runes, r)
-
-			// unicode literals
-			case r == 'u' || r == 'U':
-				r, err := scanUnicodeLiteral(l)
-				if err != nil {
-					return l.errorf(err.Error())
-				}
-				runes = append(runes, r)
-
-			// EOF
-			case r == eof:
-				return l.errorf("premature EOF")
-
-			// everything else is an error
-			default:
-				return l.errorf("invalid escape sequence %s", string(r))
+		case isEscape(r):
+			err := l.scanEscapeSequence()
+			if err != nil {
+				return l.errorf(err.Error())
 			}
 
-		// terminate the key (same as escapes above)
-		case r == ' ' || r == ':' || r == '=':
+		case isKeyTerminationCharacter(r):
 			l.backup()
 			break Loop
 
-		case r == eof:
+		case isEOF(r):
 			return l.errorf("premature EOF")
 
 		default:
-			runes = append(runes, r)
+			l.appendRune(r)
 		}
 	}
 
-	if len(runes) > 0 {
-		l.emitWithValue(itemKey, string(runes))
+	if len(l.runes) > 0 {
+		l.emit(itemKey)
 	}
 
 	// ignore trailing spaces
@@ -234,7 +209,7 @@ Loop:
 	return lexDelim
 }
 
-// lexDelim scans the delimiter. We expect to be just before the delimiter
+// lexDelim scans the delimiter. We expect to be just before the delimiter.
 func lexDelim(l *lexer) stateFn {
 	if l.next() == eof {
 		return l.errorf("premature EOF")
@@ -243,53 +218,128 @@ func lexDelim(l *lexer) stateFn {
 	return lexValue
 }
 
-// lexValue scans text until the end of the line. We expect to be just after the delimiter
+// lexValue scans text until the end of the line. We expect to be just after the delimiter.
 func lexValue(l *lexer) stateFn {
 	// ignore leading spaces
 	l.acceptRun(" ")
 	l.ignore()
 
-	runes := make([]rune, 0, 128)
+	// TODO: handle multiline with indent on subsequent lines
 	for {
 		switch r := l.next(); {
-		// TODO: handle multiline with indent on subsequent lines
-		// TODO: handle unicode literals \uXXXX and \Uxxxx
-		// TODO: handle escaped chars \n, \r, \t and \\
-		case r == '\n':
-			l.emitWithValue(itemValue, string(runes))
+		case isEscape(r):
+			err := l.scanEscapeSequence()
+			if err != nil {
+				return l.errorf(err.Error())
+			}
+
+		case isEOL(r):
+			l.emit(itemValue)
 
 			// ignore the new line
 			l.ignore()
 			return lexKey
 
-		case r == eof:
-			l.emitWithValue(itemValue, string(runes))
+		case isEOF(r):
+			l.emit(itemValue)
 			l.emit(itemEOF)
 			return nil
 
 		default:
-			runes = append(runes, r)
+			l.appendRune(r)
 		}
 	}
 }
 
-// scans the digits of the unicode literal in \uXXXX form.
-// We expect to be before the first digit
-func scanUnicodeLiteral(l *lexer) (rune, error) {
+// scanEscapeSequence scans either one of the escaped characters
+// or a unicode literal. We expect to be after the escape character.
+func (l *lexer) scanEscapeSequence() error {
+	switch r := l.next(); {
+
+	case isEscapedCharacter(r):
+		l.appendRune(decodeEscapedCharacter(r))
+		return nil
+
+	case isUnicodeLiteral(r):
+		return l.scanUnicodeLiteral()
+
+	case isEOF(r):
+		return fmt.Errorf("premature EOF")
+
+	default:
+		return fmt.Errorf("invalid escape sequence %s", string(r))
+	}
+}
+
+// scans a unicode literal in \[uU]XXXX form. We expect to be after the \[uU].
+func (l *lexer) scanUnicodeLiteral() error {
+	// scan the digits
 	d := make([]rune, 4)
 	for i := 0; i < 4; i++ {
 		d[i] = l.next()
 		if d[i] == eof {
-			return eof, nil
+			return fmt.Errorf("premature EOF")
 		}
 	}
 
-	u := string(d)
-	s, err := strconv.Unquote(fmt.Sprintf("'\\u%s'", u))
+	// decode the unicode literal.
+	// TODO: Is there a better way to do this?
+	u := fmt.Sprintf("'\\u%s'", string(d))
+	s, err := strconv.Unquote(u)
 	if err != nil {
-		return 0, fmt.Errorf("invalid unicode literal %s", u)
+		return fmt.Errorf("invalid unicode literal %s", u)
 	}
 
+	// we can ignore the width of the rune
 	r, _ := utf8.DecodeRuneInString(s)
-	return r, nil
+	l.appendRune(r)
+	return nil
+}
+
+// decodeEscapedCharacter returns the rune the unescaped value for the
+// escaped rune (minus escape character).
+func decodeEscapedCharacter(r rune) rune {
+	switch r {
+	case 'n':
+		return '\n'
+	case 'r':
+		return '\r'
+	case 't':
+		return '\t'
+	default:
+		return r
+	}
+}
+
+// isEOF reports whether we are at EOF.
+func isEOF(r rune) bool {
+	return r == eof
+}
+
+// isEOL reports whether we are at a new line character.
+func isEOL(r rune) bool {
+	return r == '\n'
+}
+
+// isEscape reports whether the rune is the escape character which
+// prefixes unicode literals and other escaped characters.
+func isEscape(r rune) bool {
+	return r == '\\'
+}
+
+// isEscapedCharacter reports whether we are at one of the characters that need escaping.
+// The escape character has already been consumed.
+func isEscapedCharacter(r rune) bool {
+	return strings.ContainsRune(" :=nrt", r)
+}
+
+// isKeyTerminationCharacter reports whether the rune terminates the current key.
+func isKeyTerminationCharacter(r rune) bool {
+	return strings.ContainsRune(" :=", r)
+}
+
+// isUnicodeLiteral reports whether we are at a unicode literal.
+// The escape character has already been consumed.
+func isUnicodeLiteral(r rune) bool {
+	return r == 'u' || r == 'U'
 }
