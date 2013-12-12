@@ -280,19 +280,17 @@ func (l *lexer) scanUnicodeLiteral() error {
 		if d[i] == eof {
 			return fmt.Errorf("premature EOF")
 		}
+		if !strings.ContainsRune("0123456789abcdefABCDEF", d[i]) {
+			return fmt.Errorf("invalid unicode literal")
+		}
 	}
 
-	// decode the unicode literal.
-	// TODO: Is there a better way to do this?
-	u := fmt.Sprintf("'\\u%s'", string(d))
-	s, err := strconv.Unquote(u)
+	// decode the digits into a rune
+	r, err := strconv.ParseInt(string(d), 16, 0)
 	if err != nil {
-		return fmt.Errorf("invalid unicode literal %s", u)
+		return err
 	}
-
-	// we can ignore the width of the rune
-	r, _ := utf8.DecodeRuneInString(s)
-	l.appendRune(r)
+	l.appendRune(rune(r))
 	return nil
 }
 
