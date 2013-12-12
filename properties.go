@@ -1,3 +1,5 @@
+// Copyright 2013 Frank Schroeder. All rights reserved. MIT licensed.
+
 package properties
 
 import (

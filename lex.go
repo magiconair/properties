@@ -1,6 +1,12 @@
+// Copyright 2013 Frank Schroeder. All rights reserved. MIT licensed.
+//
+// Parts of the lexer are taken from the template/text/parser package
+// For these parts the following applies:
+//
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// license that can be found in the LICENSE file of the go 1.2
+// distribution.
 
 package properties
 
