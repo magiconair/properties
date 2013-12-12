@@ -24,6 +24,27 @@ func (l *LoadSuite) TestOneKeyValue(c *C) {
 	testAllDelimiterCombinations(c, "key", "value")
 }
 
+func (l *LoadSuite) TestTwoKeysAndValues(c *C) {
+	testKeyValue(c, "key1=value1\nkey2=value2", "key1", "value1", "key2", "value2")
+}
+
+func (l *LoadSuite) TestWithBlankLines(c *C) {
+	testKeyValue(c, "\n\nkey=value\n\n", "key", "value")
+}
+
+func (l *LoadSuite) TestWithComments(c *C) {
+	input := `
+# this is a comment
+! and so is this
+key1=value1
+key#2=value#2
+key!3=value!3
+# and another one
+! and the final one
+`
+	testKeyValue(c, input, "key1", "value1", "key#2", "value#2", "key!3", "value!3")
+}
+
 func (l *LoadSuite) TestValueWithTrailingSpaces(c *C) {
 	testAllDelimiterCombinations(c, "key", "value   ")
 }
@@ -42,26 +63,30 @@ func (l *LoadSuite) TestEscapedCharsInValue(c *C) {
 }
 
 func (l *LoadSuite) TestMultilineValue(c *C) {
-	input := "key = valueA,\\\n    valueB"
-	testKeyValue(c, input, "key", "valueA,valueB")
+	testKeyValue(c, "key = valueA,\\\n    valueB", "key", "valueA,valueB")
 }
 
 func (l *LoadSuite) TestFailWithPrematureEOF(c *C) {
-	_, err := NewPropertiesFromString("key")
-	c.Assert(err, NotNil)
-	c.Assert(strings.Contains(err.Error(), "premature EOF"), Equals, true)
+	testError(c, "key", "premature EOF")
 }
 
 func (l *LoadSuite) TestFailWithNonISO8859_1Input(c *C) {
-	_, err := NewPropertiesFromString("key₡")
-	c.Assert(err, NotNil)
-	c.Assert(strings.Contains(err.Error(), "invalid ISO-8859-1 input"), Equals, true)
+	testError(c, "key₡", "invalid ISO-8859-1 input")
 }
 
 func (l *LoadSuite) TestFailWithInvalidUnicodeLiteralInKey(c *C) {
-	_, err := NewPropertiesFromString("key\\ugh32 = value")
-	c.Assert(err, NotNil)
-	c.Assert(strings.Contains(err.Error(), "invalid unicode literal"), Equals, true)
+	testError(c, "key\\ugh32 = value", "invalid unicode literal")
+}
+
+func BenchmarkNewPropertiesFromString(b *testing.B) {
+	input := ""
+	for i := 0; i < 1000; i++ {
+		input += fmt.Sprintf("key%d=value%d\n", i, i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		NewPropertiesFromString(input)
+	}
 }
 
 // tests all combinations of delimiters plus leading and/or trailing spaces.
@@ -73,14 +98,22 @@ func testAllDelimiterCombinations(c *C, key, value string) {
 	}
 }
 
-// tests a single key/value combination for a given input.
-func testKeyValue(c *C, input, key, value string) {
-	// fmt.Printf("Testing '%s'\n", input)
+// tests key/value pairs for a given input.
+func testKeyValue(c *C, input string, keyvalues ...string) {
 	p, err := NewPropertiesFromString(input)
 	c.Assert(err, IsNil)
 	c.Assert(p, NotNil)
-	c.Assert(p.Len(), Equals, 1)
-	assertKeyValue(c, p, key, value)
+	c.Assert(p.Len(), Equals, len(keyvalues)/2)
+	for i := 0; i < len(keyvalues)/2; i += 2 {
+		assertKeyValue(c, p, keyvalues[i], keyvalues[i+1])
+	}
+}
+
+// tests whether a given input produces a given error message.
+func testError(c *C, input, msg string) {
+	_, err := NewPropertiesFromString(input)
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), msg), Equals, true)
 }
 
 func assertKeyValue(c *C, p *Properties, key, value string) {

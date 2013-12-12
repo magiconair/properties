@@ -127,6 +127,13 @@ func (l *lexer) acceptRun(valid string) {
 	l.backup()
 }
 
+// acceptRunUntil consumes a run of runes up to a terminator.
+func (l *lexer) acceptRunUntil(term rune) {
+	for term != l.next() {
+	}
+	l.backup()
+}
+
 // hasText returns true if the current parsed text is not empty.
 func (l *lexer) isNotEmpty() bool {
 	return l.pos > l.start
@@ -166,22 +173,39 @@ func lex(input string) *lexer {
 
 // run runs the state machine for the lexer.
 func (l *lexer) run() {
-	for l.state = lexKey(l); l.state != nil; {
+	for l.state = lexBeforeKey(l); l.state != nil; {
 		l.state = l.state(l)
 	}
 }
 
 // state functions
 // TODO: handle comments
-// TODO: handle multi-line values
+
+// lexBeforeKey scans until a key begins.
+func lexBeforeKey(l *lexer) stateFn {
+	switch r := l.next(); {
+	case isEOF(r):
+		l.emit(itemEOF)
+		return nil
+
+	case isEOL(r):
+		l.ignore()
+		return lexBeforeKey
+
+	case isComment(r):
+		l.acceptRunUntil('\n')
+		l.ignore()
+		return lexBeforeKey
+
+	default:
+		l.backup()
+		return lexKey
+	}
+
+}
 
 // lexKey scans the key up to a delimiter
 func lexKey(l *lexer) stateFn {
-	if l.peek() == eof {
-		l.emit(itemEOF)
-		return nil
-	}
-
 Loop:
 	for {
 		switch r := l.next(); {
@@ -250,7 +274,7 @@ func lexValue(l *lexer) stateFn {
 
 			// ignore the new line
 			l.ignore()
-			return lexKey
+			return lexBeforeKey
 
 		case isEOF(r):
 			l.emit(itemValue)
@@ -319,6 +343,11 @@ func decodeEscapedCharacter(r rune) rune {
 	default:
 		return r
 	}
+}
+
+// isComment reports whether we are at the start of a comment.
+func isComment(r rune) bool {
+	return r == '#' || r == '!'
 }
 
 // isEOF reports whether we are at EOF.
