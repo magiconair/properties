@@ -228,9 +228,15 @@ func lexValue(l *lexer) stateFn {
 	for {
 		switch r := l.next(); {
 		case isEscape(r):
-			err := l.scanEscapeSequence()
-			if err != nil {
-				return l.errorf(err.Error())
+			r := l.peek()
+			if isEOL(r) {
+				l.next()
+				l.acceptRun(" \t")
+			} else {
+				err := l.scanEscapeSequence()
+				if err != nil {
+					return l.errorf(err.Error())
+				}
 			}
 
 		case isEOL(r):

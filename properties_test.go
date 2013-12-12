@@ -39,10 +39,10 @@ func (l *LoadSuite) TestEscapedCharsInValue(c *C) {
 	testKeyValue(c, "key = v\\ a\\:lu\\=e\\n\\r\\t", "key", "v a:lu=e\n\r\t")
 }
 
-// func (l *LoadSuite) TestMultilineValue(c *C) {
-// 	input := "key = valueA,\\\n    valueB"
-// 	testKeyValue(c, input, "key", "valueA,valueB")
-// }
+func (l *LoadSuite) TestMultilineValue(c *C) {
+	input := "key = valueA,\\\n    valueB"
+	testKeyValue(c, input, "key", "valueA,valueB")
+}
 
 func (l *LoadSuite) TestFailWithPrematureEOF(c *C) {
 	_, err := NewPropertiesFromString("key")
