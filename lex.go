@@ -12,10 +12,8 @@ package properties
 
 import (
 	"fmt"
-	// "log"
-	"strings"
-	// "unicode"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -181,7 +179,6 @@ func (l *lexer) run() {
 }
 
 // state functions
-// TODO: handle comments
 
 // lexBeforeKey scans until a key begins.
 func lexBeforeKey(l *lexer) stateFn {
