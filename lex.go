@@ -303,7 +303,7 @@ func (l *lexer) scanEscapeSequence() error {
 		l.appendRune(decodeEscapedCharacter(r))
 		return nil
 
-	case isUnicodeLiteral(r):
+	case atUnicodeLiteral(r):
 		return l.scanUnicodeLiteral()
 
 	case isEOF(r):
@@ -352,6 +352,12 @@ func decodeEscapedCharacter(r rune) rune {
 	}
 }
 
+// atUnicodeLiteral reports whether we are at a unicode literal.
+// The escape character has already been consumed.
+func atUnicodeLiteral(r rune) bool {
+	return r == 'u'
+}
+
 // isComment reports whether we are at the start of a comment.
 func isComment(r rune) bool {
 	return r == '#' || r == '!'
@@ -387,8 +393,4 @@ func isKeyTerminationCharacter(r rune) bool {
 // isWhitespace reports whether the rune is a whitespace character.
 func isWhitespace(r rune) bool {
 	return strings.ContainsRune(whitespace, r)
-// isUnicodeLiteral reports whether we are at a unicode literal.
-// The escape character has already been consumed.
-func isUnicodeLiteral(r rune) bool {
-	return r == 'u' || r == 'U'
 }

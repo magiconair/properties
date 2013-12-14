@@ -62,7 +62,6 @@ func (l *LoadSuite) TestEscapedCharsInKey(c *C) {
 
 func (l *LoadSuite) TestUnicodeLiteralInKey(c *C) {
 	testKeyValue(c, "key\\u2318 = value", "key⌘", "value")
-	testKeyValue(c, "key\\U2318 = value", "key⌘", "value")
 }
 
 func (l *LoadSuite) TestEscapedCharsInValue(c *C) {
