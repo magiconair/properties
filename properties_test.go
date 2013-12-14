@@ -32,6 +32,13 @@ func (l *LoadSuite) TestWithBlankLines(c *C) {
 	testKeyValue(c, "\n\nkey=value\n\n", "key", "value")
 }
 
+func (l *LoadSuite) TestKeyWithWhitespacePrefix(c *C) {
+	testKeyValue(c, " key=value", "key", "value")
+	testKeyValue(c, "\fkey=value", "key", "value")
+	testKeyValue(c, "\tkey=value", "key", "value")
+	testKeyValue(c, " \f\tkey=value", "key", "value")
+}
+
 func (l *LoadSuite) TestWithComments(c *C) {
 	input := `
 # this is a comment
@@ -64,6 +71,8 @@ func (l *LoadSuite) TestEscapedCharsInValue(c *C) {
 
 func (l *LoadSuite) TestMultilineValue(c *C) {
 	testKeyValue(c, "key = valueA,\\\n    valueB", "key", "valueA,valueB")
+	testKeyValue(c, "key = valueA,\\\n\fvalueB", "key", "valueA,valueB")
+	testKeyValue(c, "key = valueA,\\\n\tvalueB", "key", "valueA,valueB")
 }
 
 func (l *LoadSuite) TestFailWithPrematureEOF(c *C) {

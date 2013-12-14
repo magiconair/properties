@@ -53,6 +53,8 @@ const (
 
 const eof = -1
 
+const whitespace = " \f\t"
+
 // stateFn represents the state of the scanner as a function that returns the next state.
 type stateFn func(*lexer) stateFn
 
@@ -197,6 +199,11 @@ func lexBeforeKey(l *lexer) stateFn {
 		l.ignore()
 		return lexBeforeKey
 
+	case isWhitespace(r):
+		l.acceptRun(whitespace)
+		l.ignore()
+		return lexKey
+
 	default:
 		l.backup()
 		return lexKey
@@ -250,8 +257,8 @@ func lexDelim(l *lexer) stateFn {
 
 // lexValue scans text until the end of the line. We expect to be just after the delimiter.
 func lexValue(l *lexer) stateFn {
-	// ignore leading spaces
-	l.acceptRun(" ")
+	// ignore leading whitespace
+	l.acceptRun(whitespace)
 	l.ignore()
 
 	// TODO: handle multiline with indent on subsequent lines
@@ -261,7 +268,7 @@ func lexValue(l *lexer) stateFn {
 			r := l.peek()
 			if isEOL(r) {
 				l.next()
-				l.acceptRun(" \t")
+				l.acceptRun(whitespace)
 			} else {
 				err := l.scanEscapeSequence()
 				if err != nil {
@@ -377,6 +384,9 @@ func isKeyTerminationCharacter(r rune) bool {
 	return strings.ContainsRune(" :=", r)
 }
 
+// isWhitespace reports whether the rune is a whitespace character.
+func isWhitespace(r rune) bool {
+	return strings.ContainsRune(whitespace, r)
 // isUnicodeLiteral reports whether we are at a unicode literal.
 // The escape character has already been consumed.
 func isUnicodeLiteral(r rune) bool {
