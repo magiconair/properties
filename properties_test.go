@@ -78,10 +78,6 @@ func (l *LoadSuite) TestFailWithPrematureEOF(c *C) {
 	testError(c, "key", "premature EOF")
 }
 
-func (l *LoadSuite) TestFailWithNonISO8859_1Input(c *C) {
-	testError(c, "key₡", "invalid ISO-8859-1 input")
-}
-
 func (l *LoadSuite) TestFailWithInvalidUnicodeLiteralInKey(c *C) {
 	testError(c, "key\\ugh32 = value", "invalid unicode literal")
 }
@@ -93,7 +89,8 @@ func BenchmarkNewPropertiesFromString(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		NewPropertiesFromString(input)
+		d := NewDecoder(strings.NewReader(input))
+		d.Decode()
 	}
 }
 
@@ -108,7 +105,8 @@ func testAllDelimiterCombinations(c *C, key, value string) {
 
 // tests key/value pairs for a given input.
 func testKeyValue(c *C, input string, keyvalues ...string) {
-	p, err := NewPropertiesFromString(input)
+	d := NewDecoder(strings.NewReader(input))
+	p, err := d.Decode()
 	c.Assert(err, IsNil)
 	c.Assert(p, NotNil)
 	c.Assert(p.Len(), Equals, len(keyvalues)/2)
@@ -119,7 +117,8 @@ func testKeyValue(c *C, input string, keyvalues ...string) {
 
 // tests whether a given input produces a given error message.
 func testError(c *C, input, msg string) {
-	_, err := NewPropertiesFromString(input)
+	d := NewDecoder(strings.NewReader(input))
+	_, err := d.Decode()
 	c.Assert(err, NotNil)
 	c.Assert(strings.Contains(err.Error(), msg), Equals, true)
 }
