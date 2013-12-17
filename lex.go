@@ -44,7 +44,6 @@ type itemType int
 const (
 	itemError itemType = iota // error occurred; value is text of error
 	itemEOF
-	itemDelim // a = or : delimiter char
 	itemKey   // a key
 	itemValue // a value
 )
@@ -182,6 +181,7 @@ func (l *lexer) run() {
 
 // lexBeforeKey scans until a key begins.
 func lexBeforeKey(l *lexer) stateFn {
+	// fmt.Println("lexBeforeKey")
 	switch r := l.next(); {
 	case isEOF(r):
 		l.emit(itemEOF)
@@ -192,9 +192,7 @@ func lexBeforeKey(l *lexer) stateFn {
 		return lexBeforeKey
 
 	case isComment(r):
-		l.acceptRunUntil('\n')
-		l.ignore()
-		return lexBeforeKey
+		return lexComment
 
 	case isWhitespace(r):
 		l.acceptRun(whitespace)
@@ -205,11 +203,27 @@ func lexBeforeKey(l *lexer) stateFn {
 		l.backup()
 		return lexKey
 	}
+}
 
+// lexComment scans a comment line. The comment character has already been scanned.
+func lexComment(l *lexer) stateFn {
+	for {
+		switch  r := l.next(); {
+		case isEOF(r):
+			l.ignore()
+			l.emit(itemEOF)
+			return nil
+		case isEOL(r):
+			l.ignore()
+			return lexBeforeKey
+		}
+	}
 }
 
 // lexKey scans the key up to a delimiter
 func lexKey(l *lexer) stateFn {
+	// fmt.Println("lexKey")
+
 Loop:
 	for {
 		switch r := l.next(); {
@@ -220,7 +234,7 @@ Loop:
 				return l.errorf(err.Error())
 			}
 
-		case isKeyTerminationCharacter(r):
+		case isEndOfKey(r):
 			l.backup()
 			break Loop
 
@@ -237,28 +251,26 @@ Loop:
 	}
 
 	// ignore trailing spaces
-	l.acceptRun(" ")
+	l.acceptRun(whitespace)
 	l.ignore()
 
-	return lexDelim
+	return lexBeforeValue
 }
 
 // lexDelim scans the delimiter. We expect to be just before the delimiter.
-func lexDelim(l *lexer) stateFn {
-	if l.next() == eof {
-		return l.errorf("premature EOF")
-	}
-	l.emit(itemDelim)
+func lexBeforeValue(l *lexer) stateFn {
+	// fmt.Println("lexBeforeValue")
+	l.acceptRun(whitespace)
+	l.accept(":=")
+	l.acceptRun(whitespace)
+	l.ignore()
 	return lexValue
 }
 
 // lexValue scans text until the end of the line. We expect to be just after the delimiter.
 func lexValue(l *lexer) stateFn {
-	// ignore leading whitespace
-	l.acceptRun(whitespace)
-	l.ignore()
+	// fmt.Println("lexValue")
 
-	// TODO: handle multiline with indent on subsequent lines
 	for {
 		switch r := l.next(); {
 		case isEscape(r):
@@ -360,6 +372,11 @@ func isComment(r rune) bool {
 	return r == '#' || r == '!'
 }
 
+// isEndOfKey reports whether the rune terminates the current key.
+func isEndOfKey(r rune) bool {
+	return strings.ContainsRune(" \f\t\r\n:=", r)
+}
+
 // isEOF reports whether we are at EOF.
 func isEOF(r rune) bool {
 	return r == eof
@@ -380,11 +397,6 @@ func isEscape(r rune) bool {
 // The escape character has already been consumed.
 func isEscapedCharacter(r rune) bool {
 	return strings.ContainsRune(" :=nrt", r)
-}
-
-// isKeyTerminationCharacter reports whether the rune terminates the current key.
-func isKeyTerminationCharacter(r rune) bool {
-	return strings.ContainsRune(" :=", r)
 }
 
 // isWhitespace reports whether the rune is a whitespace character.

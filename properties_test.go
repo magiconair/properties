@@ -3,7 +3,9 @@
 package properties
 
 import (
+	"flag"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -12,77 +14,75 @@ import (
 
 func Test(t *testing.T) { TestingT(t) }
 
-type LoadSuite struct{}
+type TestSuite struct{}
 
-var _ = Suite(&LoadSuite{})
+var (
+	_       = Suite(&TestSuite{})
+	verbose = flag.Bool("verbose", false, "Verbose output")
+)
 
-func (l *LoadSuite) TestKeyWithEmptyValue(c *C) {
-	testAllDelimiterCombinations(c, "key", "")
+// define test cases in the form of
+// {"input", "key1", "value1", "key2", "value2", ...}
+var complexTests = [][]string{
+	// whitespace prefix
+	{" key=value", "key", "value"},     // SPACE prefix
+	{"\fkey=value", "key", "value"},    // FF prefix
+	{"\tkey=value", "key", "value"},    // TAB prefix
+	{" \f\tkey=value", "key", "value"}, // mix prefix
+
+	// multiple keys
+	{"key1=value1\nkey2=value2", "key1", "value1", "key2", "value2"},
+
+	// blank lines
+	{"\n\nkey=value\n\n", "key", "value"}, // leading and trailing new lines
+
+	// escaped chars
+	{"k\\ e\\:y\\= = value", "k e:y=", "value"},                // escaped chars in key
+	{"key = v\\ a\\:lu\\=e\\n\\r\\t", "key", "v a:lu=e\n\r\t"}, // escaped chars in value
+
+	// unicode literals
+	{"key\\u2318 = value", "key⌘", "value"}, // unicode literal in key
+
+	// multiline values
+	{"key = valueA,\\\n    valueB", "key", "valueA,valueB"},   // SPACE indent
+	{"key = valueA,\\\n\f\f\fvalueB", "key", "valueA,valueB"}, // FF indent
+	{"key = valueA,\\\n\t\t\tvalueB", "key", "valueA,valueB"}, // TAB indent
+	{"key = valueA,\\\n \f\tvalueB", "key", "valueA,valueB"},  // mix indent
+
+	// comments
+	{"# this is a comment\n! and so is this\nkey1=value1\nkey#2=value#2\n\nkey!3=value!3\n# and another one\n! and the final one", "key1", "value1", "key#2", "value#2", "key!3", "value!3"},
 }
 
-func (l *LoadSuite) TestOneKeyValue(c *C) {
-	testAllDelimiterCombinations(c, "key", "value")
+// define error test cases in the form of
+// {"input", "expected error message"}
+var errorTests = [][]string{
+	{"key", "premature EOF"},
+	{"key\\ugh32 = value", "invalid unicode literal"},
 }
 
-func (l *LoadSuite) TestTwoKeysAndValues(c *C) {
-	testKeyValue(c, "key1=value1\nkey2=value2", "key1", "value1", "key2", "value2")
+// tests basic single key/value combinations with all possible whitespace, delimiter and newline permutations.
+func (l *TestSuite) TestBasic(c *C) {
+	testAllCombinations(c, "key", "")
+	testAllCombinations(c, "key", "value")
+	testAllCombinations(c, "key", "value   ")
 }
 
-func (l *LoadSuite) TestWithBlankLines(c *C) {
-	testKeyValue(c, "\n\nkey=value\n\n", "key", "value")
+func (l *TestSuite) TestComplex(c *C) {
+	for i, test := range complexTests {
+		printf("[C%02d] %q %q\n", i, test[0], test[1:])
+		testKeyValue(c, test[0], test[1:]...)
+	}
 }
 
-func (l *LoadSuite) TestKeyWithWhitespacePrefix(c *C) {
-	testKeyValue(c, " key=value", "key", "value")
-	testKeyValue(c, "\fkey=value", "key", "value")
-	testKeyValue(c, "\tkey=value", "key", "value")
-	testKeyValue(c, " \f\tkey=value", "key", "value")
+func (l *TestSuite) TestErrors(c *C) {
+	for i, test := range errorTests {
+		input, msg := test[0], test[1]
+		printf("[E%02d] %q %q\n", i, input, msg)
+		testError(c, input, msg)
+	}
 }
 
-func (l *LoadSuite) TestWithComments(c *C) {
-	input := `
-# this is a comment
-! and so is this
-key1=value1
-key#2=value#2
-key!3=value!3
-# and another one
-! and the final one
-`
-	testKeyValue(c, input, "key1", "value1", "key#2", "value#2", "key!3", "value!3")
-}
-
-func (l *LoadSuite) TestValueWithTrailingSpaces(c *C) {
-	testAllDelimiterCombinations(c, "key", "value   ")
-}
-
-func (l *LoadSuite) TestEscapedCharsInKey(c *C) {
-	testKeyValue(c, "k\\ e\\:y\\= = value", "k e:y=", "value")
-}
-
-func (l *LoadSuite) TestUnicodeLiteralInKey(c *C) {
-	testKeyValue(c, "key\\u2318 = value", "key⌘", "value")
-}
-
-func (l *LoadSuite) TestEscapedCharsInValue(c *C) {
-	testKeyValue(c, "key = v\\ a\\:lu\\=e\\n\\r\\t", "key", "v a:lu=e\n\r\t")
-}
-
-func (l *LoadSuite) TestMultilineValue(c *C) {
-	testKeyValue(c, "key = valueA,\\\n    valueB", "key", "valueA,valueB")
-	testKeyValue(c, "key = valueA,\\\n\fvalueB", "key", "valueA,valueB")
-	testKeyValue(c, "key = valueA,\\\n\tvalueB", "key", "valueA,valueB")
-}
-
-func (l *LoadSuite) TestFailWithPrematureEOF(c *C) {
-	testError(c, "key", "premature EOF")
-}
-
-func (l *LoadSuite) TestFailWithInvalidUnicodeLiteralInKey(c *C) {
-	testError(c, "key\\ugh32 = value", "invalid unicode literal")
-}
-
-func BenchmarkNewPropertiesFromString(b *testing.B) {
+func BenchmarkDecoder(b *testing.B) {
 	input := ""
 	for i := 0; i < 1000; i++ {
 		input += fmt.Sprintf("key%d=value%d\n", i, i)
@@ -95,11 +95,21 @@ func BenchmarkNewPropertiesFromString(b *testing.B) {
 }
 
 // tests all combinations of delimiters plus leading and/or trailing spaces.
-func testAllDelimiterCombinations(c *C, key, value string) {
-	delimiters := []string{"=", " =", "= ", " = ", ":", " :", ": ", " : "}
-	for _, delim := range delimiters {
-		testKeyValue(c, fmt.Sprintf("%s%s%s", key, delim, value), key, value)
-		testKeyValue(c, fmt.Sprintf("%s%s%s\n", key, delim, value), key, value)
+func testAllCombinations(c *C, key, value string) {
+	whitespace := []string{" ", "\f", "\t"}
+	delimiters := []string{"", "=", ":"}
+	// newlines := []string{"", "\r", "\n", "\r\n"}
+	newlines := []string{"", "\n"}
+	for _, dl := range delimiters {
+		for _, ws1 := range whitespace {
+			for _, ws2 := range whitespace {
+				for _, nl := range newlines {
+					input := fmt.Sprintf("%s%s%s%s%s%s", key, ws1, dl, ws2, value, nl)
+					printf("%q\n", input)
+					testKeyValue(c, input, key, value)
+				}
+			}
+		}
 	}
 }
 
@@ -109,9 +119,12 @@ func testKeyValue(c *C, input string, keyvalues ...string) {
 	p, err := d.Decode()
 	c.Assert(err, IsNil)
 	c.Assert(p, NotNil)
-	c.Assert(p.Len(), Equals, len(keyvalues)/2)
+	c.Assert(p.Len(), Equals, len(keyvalues)/2, Commentf("Odd number of key/value pairs."))
 	for i := 0; i < len(keyvalues)/2; i += 2 {
-		assertKeyValue(c, p, keyvalues[i], keyvalues[i+1])
+		key, value := keyvalues[i], keyvalues[i+1]
+		v, ok := p.Get(key)
+		c.Assert(ok, Equals, true, Commentf("No key %q for input %q", key, input))
+		c.Assert(v, Equals, value, Commentf("Value %q does not match input %q", value, input))
 	}
 }
 
@@ -123,8 +136,8 @@ func testError(c *C, input, msg string) {
 	c.Assert(strings.Contains(err.Error(), msg), Equals, true)
 }
 
-func assertKeyValue(c *C, p *Properties, key, value string) {
-	v, ok := p.Get(key)
-	c.Assert(ok, Equals, true)
-	c.Assert(v, Equals, value)
+func printf(format string, args ...interface{}) {
+	if *verbose {
+		fmt.Fprintf(os.Stderr, format, args...)
+	}
 }

@@ -29,8 +29,11 @@ func (p *parser) Parse(input string) (props *Properties, err error) {
 			break
 		}
 		key := token.val
-		p.expect(itemDelim)
-		token = p.expect(itemValue)
+		token = p.expectOneOf(itemValue, itemEOF)
+		if token.typ == itemEOF {
+			props.Set(key, "")
+			break
+		}
 		props.Set(key, token.val)
 	}
 
