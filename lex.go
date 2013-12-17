@@ -250,10 +250,6 @@ Loop:
 		l.emit(itemKey)
 	}
 
-	// ignore trailing spaces
-	l.acceptRun(whitespace)
-	l.ignore()
-
 	return lexBeforeValue
 }
 
