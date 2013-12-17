@@ -1,6 +1,8 @@
-// Copyright 2013 Frank Schroeder. All rights reserved. MIT licensed.
+// Copyright 2013 Frank Schroeder. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-// Package properties reads Java properties files.
+// Package goproperties reads Java properties files.
 //
 // Java properties files contain key/value pairs in one of the following form:
 //
@@ -62,4 +64,4 @@
 //   # key = value with €
 //   key = value with \u20AC
 //
-package properties
+package goproperties

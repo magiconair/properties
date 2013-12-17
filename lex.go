@@ -1,4 +1,6 @@
-// Copyright 2013 Frank Schroeder. All rights reserved. MIT licensed.
+// Copyright 2013 Frank Schroeder. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 //
 // Parts of the lexer are taken from the template/text/parser package
 // For these parts the following applies:
@@ -8,7 +10,7 @@
 // license that can be found in the LICENSE file of the go 1.2
 // distribution.
 
-package properties
+package goproperties
 
 import (
 	"fmt"

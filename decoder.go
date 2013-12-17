@@ -1,6 +1,8 @@
-// Copyright 2013 Frank Schroeder. All rights reserved. MIT licensed.
+// Copyright 2013 Frank Schroeder. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-package properties
+package goproperties
 
 import (
 	"fmt"
@@ -13,7 +15,7 @@ const (
 	enc_iso_8859_1
 )
 
-// Decodes an ISO-8859-1 encoded string into a Properties struct.
+// Decodes an ISO-8859-1 encoded buffer into a Properties struct.
 func Decode(buf []byte) (*Properties, error) {
 	return decodeWithEncoding(buf, enc_iso_8859_1)
 }
