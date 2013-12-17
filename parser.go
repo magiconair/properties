@@ -4,7 +4,6 @@ package properties
 
 import (
 	"fmt"
-	// "log"
 	"runtime"
 )
 
@@ -17,8 +16,6 @@ func newParser() *parser {
 }
 
 func (p *parser) Parse(input string) (props *Properties, err error) {
-	// log.Printf("Parsing input '%s'", input)
-
 	defer p.recover(&err)
 	p.lex = lex(input)
 	props = &Properties{m:make(map[string]string)}
@@ -29,6 +26,7 @@ func (p *parser) Parse(input string) (props *Properties, err error) {
 			break
 		}
 		key := token.val
+
 		token = p.expectOneOf(itemValue, itemEOF)
 		if token.typ == itemEOF {
 			props.Set(key, "")
@@ -72,14 +70,7 @@ func (p *parser) recover(errp *error) {
 		if _, ok := e.(runtime.Error); ok {
 			panic(e)
 		}
-		// if p != nil {
-		// 	p.stopParse()
-		// }
 		*errp = e.(error)
 	}
 	return
 }
-
-// func (p *parser) stopParse() {
-
-// }

@@ -20,7 +20,7 @@ import (
 // item represents a token or text string returned from the scanner.
 type item struct {
 	typ itemType // The type of this item.
-	pos Pos      // The starting position, in bytes, of this item in the input string.
+	pos int      // The starting position, in bytes, of this item in the input string.
 	val string   // The value of this item.
 }
 
@@ -35,8 +35,6 @@ func (i item) String() string {
 	}
 	return fmt.Sprintf("%q", i.val)
 }
-
-type Pos int
 
 // itemType identifies the type of lex items.
 type itemType int
@@ -59,10 +57,10 @@ type stateFn func(*lexer) stateFn
 type lexer struct {
 	input   string    // the string being scanned
 	state   stateFn   // the next lexing function to enter
-	pos     Pos       // current position in the input
-	start   Pos       // start position of this item
-	width   Pos       // width of last rune read from input
-	lastPos Pos       // position of most recent item returned by nextItem
+	pos     int       // current position in the input
+	start   int       // start position of this item
+	width   int       // width of last rune read from input
+	lastPos int       // position of most recent item returned by nextItem
 	runes   []rune    // scanned runes for this item
 	items   chan item // channel of scanned items
 }
@@ -74,7 +72,7 @@ func (l *lexer) next() rune {
 		return eof
 	}
 	r, w := utf8.DecodeRuneInString(l.input[l.pos:])
-	l.width = Pos(w)
+	l.width = w
 	l.pos += l.width
 	return r
 }
@@ -208,7 +206,7 @@ func lexBeforeKey(l *lexer) stateFn {
 // lexComment scans a comment line. The comment character has already been scanned.
 func lexComment(l *lexer) stateFn {
 	for {
-		switch  r := l.next(); {
+		switch r := l.next(); {
 		case isEOF(r):
 			l.ignore()
 			l.emit(itemEOF)
@@ -224,9 +222,10 @@ func lexComment(l *lexer) stateFn {
 func lexKey(l *lexer) stateFn {
 	// fmt.Println("lexKey")
 
+	var r rune
 Loop:
 	for {
-		switch r := l.next(); {
+		switch r = l.next(); {
 
 		case isEscape(r):
 			err := l.scanEscapeSequence()
@@ -239,7 +238,7 @@ Loop:
 			break Loop
 
 		case isEOF(r):
-			return l.errorf("premature EOF")
+			break Loop
 
 		default:
 			l.appendRune(r)
@@ -248,6 +247,11 @@ Loop:
 
 	if len(l.runes) > 0 {
 		l.emit(itemKey)
+	}
+
+	if isEOF(r) {
+		l.emit(itemEOF)
+		return nil
 	}
 
 	return lexBeforeValue
@@ -321,16 +325,13 @@ func (l *lexer) scanEscapeSequence() error {
 	}
 }
 
-// scans a unicode literal in \[uU]XXXX form. We expect to be after the \[uU].
+// scans a unicode literal in the form \uXXXX. We expect to be after the \u.
 func (l *lexer) scanUnicodeLiteral() error {
 	// scan the digits
 	d := make([]rune, 4)
 	for i := 0; i < 4; i++ {
 		d[i] = l.next()
-		if d[i] == eof {
-			return fmt.Errorf("premature EOF")
-		}
-		if !strings.ContainsRune("0123456789abcdefABCDEF", d[i]) {
+		if d[i] == eof || !strings.ContainsRune("0123456789abcdefABCDEF", d[i]) {
 			return fmt.Errorf("invalid unicode literal")
 		}
 	}
@@ -340,12 +341,12 @@ func (l *lexer) scanUnicodeLiteral() error {
 	if err != nil {
 		return err
 	}
+
 	l.appendRune(rune(r))
 	return nil
 }
 
-// decodeEscapedCharacter returns the rune the unescaped value for the
-// escaped rune (minus escape character).
+// decodeEscapedCharacter returns the unescaped rune. We expect to be after the escape character.
 func decodeEscapedCharacter(r rune) rune {
 	switch r {
 	case 'n':

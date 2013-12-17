@@ -1,52 +1,42 @@
+// Copyright 2013 Frank Schroeder. All rights reserved. MIT licensed.
+
 package properties
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
 )
 
-type Decoder struct {
-	r io.Reader
-}
-
-type Encoding uint
+type encoding uint
 
 const (
-	UTF8 Encoding = 1 << iota
-	ISO_8859_1
+	enc_utf8 encoding = 1 << iota
+	enc_iso_8859_1
 )
 
-func NewDecoder(r io.Reader) *Decoder {
-	return &Decoder{r: r}
+// Decodes an ISO-8859-1 encoded string into a Properties struct.
+func Decode(buf []byte) (*Properties, error) {
+	return decodeWithEncoding(buf, enc_iso_8859_1)
 }
 
-func (d *Decoder) Decode() (*Properties, error) {
-	return decode(d.r, ISO_8859_1)
+// Decodes an UTF-8 string into a Properties struct.
+func DecodeFromString(input string) (*Properties, error) {
+	return decodeWithEncoding([]byte(input), enc_utf8)
 }
 
-func (d *Decoder) DecodeWithEncoding(enc Encoding) (*Properties, error) {
-	return decode(d.r, enc)
-}
-
-func decode(r io.Reader, enc Encoding) (*Properties, error) {
-	buf, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
+// Decodes either an ISO-8859-1 or an UTF-8 encoded string into a Properties struct.
+func decodeWithEncoding(buf []byte, enc encoding) (*Properties, error) {
 	return newParser().Parse(convert(buf, enc))
 }
 
 // The Java properties spec says that .properties files must be ISO-8859-1
 // encoded. Since the first 256 unicode code points cover ISO-8859-1 we
-// can convert each byte into a rune and use the resulting string
+// can convert each byte straight into a rune and use the resulting string
 // as UTF-8 input for the parser.
-func convert(buf []byte, enc Encoding) string {
+func convert(buf []byte, enc encoding) string {
 	switch enc {
-	case UTF8:
+	case enc_utf8:
 		return string(buf)
-	case ISO_8859_1:
+	case enc_iso_8859_1:
 		runes := make([]rune, len(buf))
 		for i, b := range buf {
 			runes[i] = rune(b)

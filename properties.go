@@ -6,13 +6,13 @@ type Properties struct {
 	m map[string]string
 }
 
-// returns the value for the given key
+// Returns the value for the given key.
 func (p *Properties) Get(key string) (value string, ok bool) {
 	value, ok = p.m[key]
 	return value, ok
 }
 
-// sets the property key = value and returns the previous value if exists or an empty string
+// Sets the property key to the given value and returns the previous value if exists or an empty string.
 func (p *Properties) Set(key, value string) (prevValue string) {
 	prevValue, ok := p.m[key]
 	if !ok {
@@ -23,7 +23,7 @@ func (p *Properties) Set(key, value string) (prevValue string) {
 	return prevValue
 }
 
-// returns the number of keys
+// Returns the number of keys.
 func (p *Properties) Len() int {
 	return len(p.m)
 }

@@ -31,17 +31,24 @@ var complexTests = [][]string{
 	{" \f\tkey=value", "key", "value"}, // mix prefix
 
 	// multiple keys
-	{"key1=value1\nkey2=value2", "key1", "value1", "key2", "value2"},
+	{"key1=value1\nkey2=value2\n", "key1", "value1", "key2", "value2"},
+	{"key1=value1\rkey2=value2\r", "key1", "value1", "key2", "value2"},
+	{"key1=value1\r\nkey2=value2\r\n", "key1", "value1", "key2", "value2"},
 
 	// blank lines
-	{"\n\nkey=value\n\n", "key", "value"}, // leading and trailing new lines
+	{"\nkey=value\n", "key", "value"},
+	{"\rkey=value\r", "key", "value"},
+	{"\r\nkey=value\r\n", "key", "value"},
 
 	// escaped chars
 	{"k\\ e\\:y\\= = value", "k e:y=", "value"},                // escaped chars in key
 	{"key = v\\ a\\:lu\\=e\\n\\r\\t", "key", "v a:lu=e\n\r\t"}, // escaped chars in value
 
 	// unicode literals
-	{"key\\u2318 = value", "key⌘", "value"}, // unicode literal in key
+	{"key\\u2318 = value", "key⌘", "value"},
+	{"k\\u2318ey = value", "k⌘ey", "value"},
+	{"key = value\\u2318", "key", "value⌘"},
+	{"key = valu\\u2318e", "key", "valu⌘e"},
 
 	// multiline values
 	{"key = valueA,\\\n    valueB", "key", "valueA,valueB"},   // SPACE indent
@@ -56,8 +63,23 @@ var complexTests = [][]string{
 // define error test cases in the form of
 // {"input", "expected error message"}
 var errorTests = [][]string{
-	{"key", "premature EOF"},
-	{"key\\ugh32 = value", "invalid unicode literal"},
+	{"key\\u1 = value", "invalid unicode literal"},
+	{"key\\u12 = value", "invalid unicode literal"},
+	{"key\\u123 = value", "invalid unicode literal"},
+	{"key\\u123g = value", "invalid unicode literal"},
+	{"key\\u123", "invalid unicode literal"},
+}
+
+// Benchmarks the decoder by creating a property file with 1000 key/value pairs.
+func BenchmarkDecoder(b *testing.B) {
+	input := ""
+	for i := 0; i < 1000; i++ {
+		input += fmt.Sprintf("key%d=value%d\n", i, i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		Decode([]byte(input))
+	}
 }
 
 // tests basic single key/value combinations with all possible whitespace, delimiter and newline permutations.
@@ -67,45 +89,36 @@ func (l *TestSuite) TestBasic(c *C) {
 	testAllCombinations(c, "key", "value   ")
 }
 
+// tests more complex cases.
 func (l *TestSuite) TestComplex(c *C) {
-	for i, test := range complexTests {
-		printf("[C%02d] %q %q\n", i, test[0], test[1:])
+	for _, test := range complexTests {
 		testKeyValue(c, test[0], test[1:]...)
 	}
 }
 
+// tests error cases.
 func (l *TestSuite) TestErrors(c *C) {
-	for i, test := range errorTests {
+	for _, test := range errorTests {
 		input, msg := test[0], test[1]
-		printf("[E%02d] %q %q\n", i, input, msg)
 		testError(c, input, msg)
 	}
 }
 
-func BenchmarkDecoder(b *testing.B) {
-	input := ""
-	for i := 0; i < 1000; i++ {
-		input += fmt.Sprintf("key%d=value%d\n", i, i)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		d := NewDecoder(strings.NewReader(input))
-		d.Decode()
-	}
-}
-
-// tests all combinations of delimiters plus leading and/or trailing spaces.
+// tests all combinations of delimiters, leading and/or trailing whitespace and newlines.
 func testAllCombinations(c *C, key, value string) {
-	whitespace := []string{" ", "\f", "\t"}
-	delimiters := []string{"", "=", ":"}
-	// newlines := []string{"", "\r", "\n", "\r\n"}
-	newlines := []string{"", "\n", "\r"}
+	whitespace := []string{"", " ", "\f", "\t"}
+	delimiters := []string{"", " ", "=", ":"}
+	newlines := []string{"", "\r", "\n", "\r\n"}
 	for _, dl := range delimiters {
 		for _, ws1 := range whitespace {
 			for _, ws2 := range whitespace {
 				for _, nl := range newlines {
+					// skip the one case where there is nothing between a key and a value
+					if ws1 == "" && dl == "" && ws2 == "" && value != "" {
+						continue
+					}
+
 					input := fmt.Sprintf("%s%s%s%s%s%s", key, ws1, dl, ws2, value, nl)
-					printf("%q\n", input)
 					testKeyValue(c, input, key, value)
 				}
 			}
@@ -113,13 +126,16 @@ func testAllCombinations(c *C, key, value string) {
 	}
 }
 
-// tests key/value pairs for a given input.
+// tests whether key/value pairs exist for a given input.
+// keyvalues is expected to be an even number of strings of "key", "value", ...
 func testKeyValue(c *C, input string, keyvalues ...string) {
-	d := NewDecoder(strings.NewReader(input))
-	p, err := d.Decode()
+	printf("%q\n", input)
+
+	p, err := Decode([]byte(input))
 	c.Assert(err, IsNil)
 	c.Assert(p, NotNil)
 	c.Assert(p.Len(), Equals, len(keyvalues)/2, Commentf("Odd number of key/value pairs."))
+
 	for i := 0; i < len(keyvalues)/2; i += 2 {
 		key, value := keyvalues[i], keyvalues[i+1]
 		v, ok := p.Get(key)
@@ -128,14 +144,16 @@ func testKeyValue(c *C, input string, keyvalues ...string) {
 	}
 }
 
-// tests whether a given input produces a given error message.
+// tests whether some input produces a given error message.
 func testError(c *C, input, msg string) {
-	d := NewDecoder(strings.NewReader(input))
-	_, err := d.Decode()
+	printf("%q\n", input)
+
+	_, err := Decode([]byte(input))
 	c.Assert(err, NotNil)
-	c.Assert(strings.Contains(err.Error(), msg), Equals, true)
+	c.Assert(strings.Contains(err.Error(), msg), Equals, true, Commentf("Expected %q got %q", msg, err.Error()))
 }
 
+// prints to stderr if the -verbose flag was given.
 func printf(format string, args ...interface{}) {
 	if *verbose {
 		fmt.Fprintf(os.Stderr, format, args...)
