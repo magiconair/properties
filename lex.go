@@ -253,7 +253,9 @@ Loop:
 	return lexBeforeValue
 }
 
-// lexDelim scans the delimiter. We expect to be just before the delimiter.
+// lexBeforeValue scans the delimiter between key and value.
+// Leading and trailing whitespace is ignored.
+// We expect to be just after the key.
 func lexBeforeValue(l *lexer) stateFn {
 	// fmt.Println("lexBeforeValue")
 	l.acceptRun(whitespace)
