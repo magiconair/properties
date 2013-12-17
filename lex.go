@@ -382,7 +382,7 @@ func isEOF(r rune) bool {
 
 // isEOL reports whether we are at a new line character.
 func isEOL(r rune) bool {
-	return r == '\n'
+	return r == '\n' || r == '\r'
 }
 
 // isEscape reports whether the rune is the escape character which

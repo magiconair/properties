@@ -99,7 +99,7 @@ func testAllCombinations(c *C, key, value string) {
 	whitespace := []string{" ", "\f", "\t"}
 	delimiters := []string{"", "=", ":"}
 	// newlines := []string{"", "\r", "\n", "\r\n"}
-	newlines := []string{"", "\n"}
+	newlines := []string{"", "\n", "\r"}
 	for _, dl := range delimiters {
 		for _, ws1 := range whitespace {
 			for _, ws2 := range whitespace {
