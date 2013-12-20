@@ -17,10 +17,10 @@ func newParser() *parser {
 	return &parser{}
 }
 
-func (p *parser) Parse(input string) (props *Properties, err error) {
+func (p *parser) Parse(input string) (props Properties, err error) {
 	defer p.recover(&err)
 	p.lex = lex(input)
-	props = &Properties{m:make(map[string]string)}
+	props = make(map[string]string)
 
 	for {
 		token := p.expectOneOf(itemKey, itemEOF)
@@ -31,10 +31,10 @@ func (p *parser) Parse(input string) (props *Properties, err error) {
 
 		token = p.expectOneOf(itemValue, itemEOF)
 		if token.typ == itemEOF {
-			props.Set(key, "")
+			props[key] = ""
 			break
 		}
-		props.Set(key, token.val)
+		props[key] = token.val
 	}
 
 	return props, nil

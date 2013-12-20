@@ -16,17 +16,17 @@ const (
 )
 
 // Decodes an ISO-8859-1 encoded buffer into a Properties struct.
-func Decode(buf []byte) (*Properties, error) {
+func Decode(buf []byte) (Properties, error) {
 	return decodeWithEncoding(buf, enc_iso_8859_1)
 }
 
 // Decodes an UTF-8 string into a Properties struct.
-func DecodeFromString(input string) (*Properties, error) {
+func DecodeFromString(input string) (Properties, error) {
 	return decodeWithEncoding([]byte(input), enc_utf8)
 }
 
 // Decodes either an ISO-8859-1 or an UTF-8 encoded string into a Properties struct.
-func decodeWithEncoding(buf []byte, enc encoding) (*Properties, error) {
+func decodeWithEncoding(buf []byte, enc encoding) (Properties, error) {
 	return newParser().Parse(convert(buf, enc))
 }
 

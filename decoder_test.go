@@ -136,11 +136,11 @@ func testKeyValue(c *C, input string, keyvalues ...string) {
 	p, err := Decode([]byte(input))
 	c.Assert(err, IsNil)
 	c.Assert(p, NotNil)
-	c.Assert(p.Len(), Equals, len(keyvalues)/2, Commentf("Odd number of key/value pairs."))
+	c.Assert(len(p), Equals, len(keyvalues)/2, Commentf("Odd number of key/value pairs."))
 
 	for i := 0; i < len(keyvalues)/2; i += 2 {
 		key, value := keyvalues[i], keyvalues[i+1]
-		v, ok := p.Get(key)
+		v, ok := p[key]
 		c.Assert(ok, Equals, true, Commentf("No key %q for input %q", key, input))
 		c.Assert(v, Equals, value, Commentf("Value %q does not match input %q", value, input))
 	}
