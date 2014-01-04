@@ -97,7 +97,7 @@ func (p *Properties) Write(w io.Writer) (int, error) {
 
 // expand recursively expands expressions of '(prefix)key(postfix)' to their corresponding values.
 // The function keeps track of the keys that were already expanded and stops if it
-// detects a circular reference.
+// detects a circular reference or a malformed expression.
 func (p *Properties) expand(input string) (string, error) {
 	// no pre/postfix -> nothing to expand
 	if p.Prefix == "" && p.Postfix == "" {
