@@ -48,8 +48,10 @@ const (
 	itemValue // a value
 )
 
+// defines a constant for EOF
 const eof = -1
 
+// permitted whitespace characters space, FF and TAB
 const whitespace = " \f\t"
 
 // stateFn represents the state of the scanner as a function that returns the next state.
@@ -322,8 +324,11 @@ func (l *lexer) scanEscapeSequence() error {
 	case isEOF(r):
 		return fmt.Errorf("premature EOF")
 
+	// silently drop the escape character and append the rune as is
 	default:
-		return fmt.Errorf("invalid escape sequence %s", string(r))
+		l.appendRune(r)
+		return nil
+		// return fmt.Errorf("invalid escape sequence %s", string(r))
 	}
 }
 
@@ -351,6 +356,8 @@ func (l *lexer) scanUnicodeLiteral() error {
 // decodeEscapedCharacter returns the unescaped rune. We expect to be after the escape character.
 func decodeEscapedCharacter(r rune) rune {
 	switch r {
+	case 'f':
+		return '\f'
 	case 'n':
 		return '\n'
 	case 'r':
@@ -397,7 +404,7 @@ func isEscape(r rune) bool {
 // isEscapedCharacter reports whether we are at one of the characters that need escaping.
 // The escape character has already been consumed.
 func isEscapedCharacter(r rune) bool {
-	return strings.ContainsRune(" :=nrt", r)
+	return strings.ContainsRune(" :=fnrt", r)
 }
 
 // isWhitespace reports whether the rune is a whitespace character.

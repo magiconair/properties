@@ -5,13 +5,14 @@
 package goproperties
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
 
-	. "github.scm.corp.ebay.com/ecg-marktplaats/cas-go/third_party/launchpad.net/gocheck"
+	. "launchpad.net/gocheck"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -42,9 +43,27 @@ var complexTests = [][]string{
 	{"\rkey=value\r", "key", "value"},
 	{"\r\nkey=value\r\n", "key", "value"},
 
-	// escaped chars
-	{"k\\ e\\:y\\= = value", "k e:y=", "value"},                // escaped chars in key
-	{"key = v\\ a\\:lu\\=e\\n\\r\\t", "key", "v a:lu=e\n\r\t"}, // escaped chars in value
+	// escaped chars in key
+	{"k\\ ey = value", "k ey", "value"},
+	{"k\\:ey = value", "k:ey", "value"},
+	{"k\\=ey = value", "k=ey", "value"},
+	{"k\\fey = value", "k\fey", "value"},
+	{"k\\ney = value", "k\ney", "value"},
+	{"k\\rey = value", "k\rey", "value"},
+	{"k\\tey = value", "k\tey", "value"},
+
+	// escaped chars in value
+	{"key = v\\ alue", "key", "v alue"},
+	{"key = v\\:alue", "key", "v:alue"},
+	{"key = v\\=alue", "key", "v=alue"},
+	{"key = v\\falue", "key", "v\falue"},
+	{"key = v\\nalue", "key", "v\nalue"},
+	{"key = v\\ralue", "key", "v\ralue"},
+	{"key = v\\talue", "key", "v\talue"},
+
+	// silently dropped escape character
+	{"k\\zey = value", "kzey", "value"},
+	{"key = v\\zalue", "key", "vzalue"},
 
 	// unicode literals
 	{"key\\u2318 = value", "key⌘", "value"},
@@ -60,6 +79,18 @@ var complexTests = [][]string{
 
 	// comments
 	{"# this is a comment\n! and so is this\nkey1=value1\nkey#2=value#2\n\nkey!3=value!3\n# and another one\n! and the final one", "key1", "value1", "key#2", "value#2", "key!3", "value!3"},
+
+	// expansion tests
+	{"key=value\nkey2=${key}", "key", "value", "key2", "value"},
+	{"key=value\nkey2=${key}\nkey3=${key2}", "key", "value", "key2", "value", "key3", "value"},
+
+	// circular references
+	{"key=${key}", "key", "${key}"},
+	{"key1=${key2}\nkey2=${key1}", "key1", "${key2}", "key2", "${key1}"},
+
+	// malformed expressions
+	{"key=${ke", "key", "${ke"},
+	{"key=valu${ke", "key", "valu${ke"},
 }
 
 // define error test cases in the form of
@@ -72,6 +103,15 @@ var errorTests = [][]string{
 	{"key\\u123", "invalid unicode literal"},
 }
 
+// define write encoding test cases in the form of
+// {"input", "expected output after write"}
+var writeTests = [][]string{
+	{"key = value", "key = value\n"},
+	{"key = value \\\n   continued", "key = value continued\n"},
+	{"key⌘ = value", "key\\u2318 = value\n"},
+	{"ke\\ \\:y = value", "ke\\ \\:y = value\n"},
+}
+
 // Benchmarks the decoder by creating a property file with 1000 key/value pairs.
 func BenchmarkDecoder(b *testing.B) {
 	input := ""
@@ -80,7 +120,7 @@ func BenchmarkDecoder(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Decode([]byte(input))
+		Load([]byte(input))
 	}
 }
 
@@ -103,6 +143,21 @@ func (l *TestSuite) TestErrors(c *C) {
 	for _, test := range errorTests {
 		input, msg := test[0], test[1]
 		testError(c, input, msg)
+	}
+}
+
+// Test write encoding.
+func (l *TestSuite) TestWrite(c *C) {
+	for _, test := range writeTests {
+		input, output := test[0], test[1]
+		p, err := parse(input)
+
+		buf := new(bytes.Buffer)
+		n, err := p.Write(buf)
+		c.Assert(err, IsNil)
+		s := string(buf.Bytes())
+		c.Assert(n, Equals, len(output), Commentf("input=%q expected=%q obtained=%q", input, output, s))
+		c.Assert(s, Equals, output, Commentf("input=%q expected=%q obtained=%q", input, output, s))
 	}
 }
 
@@ -133,26 +188,32 @@ func testAllCombinations(c *C, key, value string) {
 func testKeyValue(c *C, input string, keyvalues ...string) {
 	printf("%q\n", input)
 
-	p, err := Decode([]byte(input))
+	p, err := Load([]byte(input))
 	c.Assert(err, IsNil)
-	c.Assert(p, NotNil)
-	c.Assert(len(p), Equals, len(keyvalues)/2, Commentf("Odd number of key/value pairs."))
-
-	for i := 0; i < len(keyvalues)/2; i += 2 {
-		key, value := keyvalues[i], keyvalues[i+1]
-		v, ok := p[key]
-		c.Assert(ok, Equals, true, Commentf("No key %q for input %q", key, input))
-		c.Assert(v, Equals, value, Commentf("Value %q does not match input %q", value, input))
-	}
+	assertKeyValues(c, input, p, keyvalues...)
 }
 
 // tests whether some input produces a given error message.
 func testError(c *C, input, msg string) {
 	printf("%q\n", input)
 
-	_, err := Decode([]byte(input))
+	_, err := Load([]byte(input))
 	c.Assert(err, NotNil)
 	c.Assert(strings.Contains(err.Error(), msg), Equals, true, Commentf("Expected %q got %q", msg, err.Error()))
+}
+
+// tests whether key/value pairs exist for a given input.
+// keyvalues is expected to be an even number of strings of "key", "value", ...
+func assertKeyValues(c *C, input string, p *Properties, keyvalues ...string) {
+	c.Assert(p, NotNil)
+	c.Assert(2*p.Len(), Equals, len(keyvalues), Commentf("Odd number of key/value pairs."))
+
+	for i := 0; i < len(keyvalues); i += 2 {
+		key, value := keyvalues[i], keyvalues[i+1]
+		v, ok := p.Get(key)
+		c.Assert(ok, Equals, true, Commentf("No key %q found (input=%q)", key, input))
+		c.Assert(v, Equals, value, Commentf("Value %q does not match %q (input=%q)", v, value, input))
+	}
 }
 
 // prints to stderr if the -verbose flag was given.

@@ -13,14 +13,12 @@ type parser struct {
 	lex *lexer
 }
 
-func newParser() *parser {
-	return &parser{}
-}
-
-func (p *parser) Parse(input string) (props Properties, err error) {
+func parse(input string) (properties *Properties, err error) {
+	p := &parser{lex: lex(input)}
 	defer p.recover(&err)
+
 	p.lex = lex(input)
-	props = make(map[string]string)
+	properties = NewProperties()
 
 	for {
 		token := p.expectOneOf(itemKey, itemEOF)
@@ -31,13 +29,13 @@ func (p *parser) Parse(input string) (props Properties, err error) {
 
 		token = p.expectOneOf(itemValue, itemEOF)
 		if token.typ == itemEOF {
-			props[key] = ""
+			properties.m[key] = ""
 			break
 		}
-		props[key] = token.val
+		properties.m[key] = token.val
 	}
 
-	return props, nil
+	return properties, nil
 }
 
 func (p *parser) errorf(format string, args ...interface{}) {
