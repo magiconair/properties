@@ -136,28 +136,14 @@ func (p *Properties) doExpand(s string, keys map[string]bool) (string, error) {
 }
 
 // encode encodes a UTF-8 string to ISO-8859-1 and escapes some characters.
-func encode(s string, escape string) string {
+func encode(s string, special string) string {
 	var r rune
 	var w int
 	var v string
 	for pos := 0; pos < len(s); {
 		switch r, w = utf8.DecodeRuneInString(s[pos:]); {
-		case r < 1<<8: // single byte rune -> encode special chars only
-			switch r {
-			case '\f':
-				v += "\\f"
-			case '\n':
-				v += "\\n"
-			case '\r':
-				v += "\\r"
-			case '\t':
-				v += "\\t"
-			default:
-				if strings.ContainsRune(escape, r) {
-					v += "\\"
-				}
-				v += string(r)
-			}
+		case r < 1<<8: // single byte rune -> escape special chars only
+			v += escape(r, special)
 		case r < 1<<16: // two byte rune -> unicode literal
 			v += fmt.Sprintf("\\u%04x", r)
 		default: // more than two bytes per rune -> can't encode
@@ -166,4 +152,22 @@ func encode(s string, escape string) string {
 		pos += w
 	}
 	return v
+}
+
+func escape(r rune, special string) string {
+	switch r {
+	case '\f':
+		return "\\f"
+	case '\n':
+		return "\\n"
+	case '\r':
+		return "\\r"
+	case '\t':
+		return "\\t"
+	default:
+		if strings.ContainsRune(special, r) {
+			return "\\" + string(r)
+		}
+		return string(r)
+	}
 }
