@@ -23,7 +23,7 @@ var (
 // ----------------------------------------------------------------------------
 
 func (s *LoadSuite) TestLoadFailsWithNotExistingFile(c *C) {
-	_, err := LoadFile("doesnotexist.properties")
+	_, err := LoadFile("doesnotexist.properties", ISO_8859_1)
 	c.Assert(err, NotNil)
 	c.Assert(err, ErrorMatches, "open.*no such file or directory")
 }
@@ -31,7 +31,7 @@ func (s *LoadSuite) TestLoadFailsWithNotExistingFile(c *C) {
 // ----------------------------------------------------------------------------
 
 func (s *LoadSuite) TestLoadFilesFailsOnNotExistingFile(c *C) {
-	_, err := LoadFiles([]string{"doesnotexist.properties"}, false)
+	_, err := LoadFiles([]string{"doesnotexist.properties"}, ISO_8859_1, false)
 	c.Assert(err, NotNil)
 	c.Assert(err, ErrorMatches, "open.*no such file or directory")
 }
@@ -39,7 +39,7 @@ func (s *LoadSuite) TestLoadFilesFailsOnNotExistingFile(c *C) {
 // ----------------------------------------------------------------------------
 
 func (s *LoadSuite) TestLoadFilesDoesNotFailOnNotExistingFileAndIgnoreMissing(c *C) {
-	p, err := LoadFiles([]string{"doesnotexist.properties"}, true)
+	p, err := LoadFiles([]string{"doesnotexist.properties"}, ISO_8859_1, true)
 	c.Assert(err, IsNil)
 	c.Assert(p.Len(), Equals, 0)
 }
@@ -48,7 +48,7 @@ func (s *LoadSuite) TestLoadFilesDoesNotFailOnNotExistingFileAndIgnoreMissing(c 
 
 func (s *LoadSuite) TestLoad(c *C) {
 	filename := s.makeFile(c, "key=value")
-	p := MustLoadFile(filename)
+	p := MustLoadFile(filename, ISO_8859_1)
 
 	c.Assert(p.Len(), Equals, 1)
 	assertKeyValues(c, "", p, "key", "value")
@@ -59,7 +59,7 @@ func (s *LoadSuite) TestLoad(c *C) {
 func (s *LoadSuite) TestLoadFiles(c *C) {
 	filename := s.makeFile(c, "key=value")
 	filename2 := s.makeFile(c, "key2=value2")
-	p := MustLoadFiles([]string{filename, filename2}, false)
+	p := MustLoadFiles([]string{filename, filename2}, ISO_8859_1, false)
 	assertKeyValues(c, "", p, "key", "value", "key2", "value2")
 }
 
@@ -68,7 +68,7 @@ func (s *LoadSuite) TestLoadFiles(c *C) {
 func (s *LoadSuite) TestLoadFilesAndIgnoreMissing(c *C) {
 	filename := s.makeFile(c, "key=value")
 	filename2 := s.makeFile(c, "key2=value2")
-	p := MustLoadFiles([]string{filename, filename + "foo", filename2, filename2 + "foo"}, true)
+	p := MustLoadFiles([]string{filename, filename + "foo", filename2, filename2 + "foo"}, ISO_8859_1, true)
 	assertKeyValues(c, "", p, "key", "value", "key2", "value2")
 }
 

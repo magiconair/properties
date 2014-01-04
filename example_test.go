@@ -9,10 +9,10 @@ import (
 	"log"
 )
 
-func ExampleLoad() {
+func ExampleLoad_ISO() {
 	buf := []byte("key = ISO-8859-1 value with unicode literal \\u2318 and umlaut ")
 	buf = append(buf, 0xE4) // 0xE4 == ä
-	p, _ := Load(buf)
+	p, _ := Load(buf, ISO_8859_1)
 	v, ok := p.Get("key")
 	fmt.Println(ok)
 	fmt.Println(v)
@@ -21,8 +21,8 @@ func ExampleLoad() {
 	// ISO-8859-1 value with unicode literal ⌘ and umlaut ä
 }
 
-func ExampleLoadString() {
-	p, _ := LoadString("key = UTF-8 value with unicode character ⌘ and umlaut ä")
+func ExampleLoad_UTF8() {
+	p, _ := Load([]byte("key = UTF-8 value with unicode character ⌘ and umlaut ä"), UTF8)
 	v, ok := p.Get("key")
 	fmt.Println(ok)
 	fmt.Println(v)
@@ -32,7 +32,7 @@ func ExampleLoadString() {
 }
 
 func Example_Properties_GetDefault() {
-	p, _ := LoadString("key=value")
+	p, _ := Load([]byte("key=value"), ISO_8859_1)
 	v := p.GetDefault("another key", "default value")
 	fmt.Println(v)
 	// Output:
@@ -41,7 +41,7 @@ func Example_Properties_GetDefault() {
 
 func Example() {
 	// Decode some key/value pairs with expressions
-	p, err := LoadString("key=value\nkey2=${key}")
+	p, err := Load([]byte("key=value\nkey2=${key}"), ISO_8859_1)
 	if err != nil {
 		log.Fatal(err)
 	}

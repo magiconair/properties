@@ -10,57 +10,50 @@ import (
 	"os"
 )
 
-// Load reads an ISO-8859-1 encoded buffer into a Properties struct.
-func Load(buf []byte) (*Properties, error) {
-	return loadBuf(buf, enc_iso_8859_1)
-}
-
-// LoadString reads an UTF-8 string into a Properties struct.
-func LoadString(input string) (*Properties, error) {
-	return loadBuf([]byte(input), enc_utf8)
+// Load reads a buffer into a Properties struct.
+func Load(buf []byte, enc Encoding) (*Properties, error) {
+	return loadBuf(buf, enc)
 }
 
 // LoadFile reads a file into a Properties struct.
-func LoadFile(filename string) (*Properties, error) {
-	return loadFiles([]string{filename}, false)
+func LoadFile(filename string, enc Encoding) (*Properties, error) {
+	return loadFiles([]string{filename}, enc, false)
 }
 
-// LoadFiles reads multiple file in the given order into
-// a Properties struct. If 'ignoreMissing' is 'true' then
+// LoadFiles reads multiple files in the given order into
+// a Properties struct. If 'ignoreMissing' is true then
 // non-existent files will not be reported as error.
-func LoadFiles(filenames []string, ignoreMissing bool) (*Properties, error) {
-	return loadFiles(filenames, ignoreMissing)
+func LoadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Properties, error) {
+	return loadFiles(filenames, enc, ignoreMissing)
 }
 
-// MustLoadFile reads a file into a Properties struct and panics on error.
-func MustLoadFile(filename string) *Properties {
-	return MustLoadFiles([]string{filename}, false)
+// MustLoadFile reads a file into a Properties struct and
+// panics on error.
+func MustLoadFile(filename string, enc Encoding) *Properties {
+	return mustLoadFiles([]string{filename}, enc, false)
 }
 
-// MustLoadFiles reads multiple file in the given order into
-// a Properties struct and panics on error.
-// If 'ignoreMissing' is 'true' then non-existent files will not be reported as error.
-func MustLoadFiles(filenames []string, ignoreMissing bool) *Properties {
-	p, err := loadFiles(filenames, ignoreMissing)
-	if err != nil {
-		panic(err)
-	}
-	return p
+// MustLoadFiles reads multiple files in the given order into
+// a Properties struct and panics on error. If 'ignoreMissing'
+// is true then non-existent files will not be reported as error.
+func MustLoadFiles(filenames []string, enc Encoding, ignoreMissing bool) *Properties {
+	return mustLoadFiles(filenames, enc, ignoreMissing)
 }
 
-type encoding uint
+// ----------------------------------------------------------------------------
+
+type Encoding uint
 
 const (
-	enc_utf8 encoding = 1 << iota
-	enc_iso_8859_1
+	UTF8 Encoding = 1 << iota
+	ISO_8859_1
 )
 
-// Loads either an ISO-8859-1 or an UTF-8 encoded string into a Properties struct.
-func loadBuf(buf []byte, enc encoding) (*Properties, error) {
+func loadBuf(buf []byte, enc Encoding) (*Properties, error) {
 	return parse(convert(buf, enc))
 }
 
-func loadFiles(filenames []string, ignoreMissing bool) (*Properties, error) {
+func loadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Properties, error) {
 	buff := make([]byte, 0, 4096)
 
 	for _, filename := range filenames {
@@ -78,17 +71,25 @@ func loadFiles(filenames []string, ignoreMissing bool) (*Properties, error) {
 		buff = append(append(buff, buf...), '\n')
 	}
 
-	return loadBuf(buff, enc_iso_8859_1)
+	return loadBuf(buff, enc)
 }
 
-// Interprets a byte buffer either as ISO-8859-1 or UTF-8 encoded string.
+func mustLoadFiles(filenames []string, enc Encoding, ignoreMissing bool) *Properties {
+	p, err := loadFiles(filenames, enc, ignoreMissing)
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
+
+// Interprets a byte buffer either as an ISO-8859-1 or UTF-8 encoded string.
 // For ISO-8859-1 we can convert each byte straight into a rune since the
 // first 256 unicode code points cover ISO-8859-1.
-func convert(buf []byte, enc encoding) string {
+func convert(buf []byte, enc Encoding) string {
 	switch enc {
-	case enc_utf8:
+	case UTF8:
 		return string(buf)
-	case enc_iso_8859_1:
+	case ISO_8859_1:
 		runes := make([]rune, len(buf))
 		for i, b := range buf {
 			runes[i] = rune(b)

@@ -120,7 +120,7 @@ func BenchmarkDecoder(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Load([]byte(input))
+		Load([]byte(input), ISO_8859_1)
 	}
 }
 
@@ -188,7 +188,7 @@ func testAllCombinations(c *C, key, value string) {
 func testKeyValue(c *C, input string, keyvalues ...string) {
 	printf("%q\n", input)
 
-	p, err := Load([]byte(input))
+	p, err := Load([]byte(input), ISO_8859_1)
 	c.Assert(err, IsNil)
 	assertKeyValues(c, input, p, keyvalues...)
 }
@@ -197,7 +197,7 @@ func testKeyValue(c *C, input string, keyvalues ...string) {
 func testError(c *C, input, msg string) {
 	printf("%q\n", input)
 
-	_, err := Load([]byte(input))
+	_, err := Load([]byte(input), ISO_8859_1)
 	c.Assert(err, NotNil)
 	c.Assert(strings.Contains(err.Error(), msg), Equals, true, Commentf("Expected %q got %q", msg, err.Error()))
 }
