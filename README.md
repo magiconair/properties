@@ -16,15 +16,7 @@ Install
 Usage
 -----
 
-	buf, err := ioutil.ReadFile(filename)
-	if err != nil {
-		// handle error
-	}
-
-	p, err := goproperties.Decode(buf)
-	if err != nil {
-		// handle error
-	}
+	p, err := goproperties.MustLoadFile(filename)
 
 	value, ok := p.Get("key")
 	if ok {
@@ -53,10 +45,3 @@ License
 
 2 clause BSD license. See LICENSE file for details.
 
-Parts of the lexer are taken from the template/text/parser package
-For these parts the following applies:
-
-Copyright 2011 The Go Authors. All rights reserved.
-Use of this source code is governed by a BSD-style
-license that can be found in the LICENSE file of the go 1.2
-distribution.
