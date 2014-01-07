@@ -4,6 +4,9 @@
 
 package goproperties
 
+// BUG(frank): Set() does not check for invalid unicode literals since this is currently handled by the lexer.
+// BUG(frank): Write() does not allow to configure the newline character. Therefore, on Windows LF is used.
+
 import (
 	"fmt"
 	"io"
@@ -121,7 +124,6 @@ func (p *Properties) Len() int {
 // circular reference or a malformed expression then
 // an error is returned.
 func (p *Properties) Set(key, value string) (prev string, ok bool, err error) {
-	// TODO(frank): Check for invalid unicode literals since this is currently done in the lexer.
 	_, err = p.expand(value)
 	if err != nil {
 		return "", false, err
