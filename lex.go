@@ -322,7 +322,7 @@ func (l *lexer) scanEscapeSequence() error {
 		return l.scanUnicodeLiteral()
 
 	case isEOF(r):
-		return fmt.Errorf("premature EOF")
+		return fmt.Errorf("Premature EOF")
 
 	// silently drop the escape character and append the rune as is
 	default:
@@ -339,7 +339,7 @@ func (l *lexer) scanUnicodeLiteral() error {
 	for i := 0; i < 4; i++ {
 		d[i] = l.next()
 		if d[i] == eof || !strings.ContainsRune("0123456789abcdefABCDEF", d[i]) {
-			return fmt.Errorf("invalid unicode literal")
+			return fmt.Errorf("Invalid unicode literal")
 		}
 	}
 

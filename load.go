@@ -50,7 +50,12 @@ const (
 )
 
 func loadBuf(buf []byte, enc Encoding) (*Properties, error) {
-	return parse(convert(buf, enc))
+	p, err := parse(convert(buf, enc))
+	if err != nil {
+		return nil, err
+	}
+	
+	return p, p.check()
 }
 
 func loadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Properties, error) {
@@ -96,6 +101,6 @@ func convert(buf []byte, enc Encoding) string {
 		}
 		return string(runes)
 	default:
-		panic(fmt.Sprintf("unsupported encoding %v", enc))
+		panic(fmt.Sprintf("Unsupported encoding %v", enc))
 	}
 }

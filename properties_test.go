@@ -83,33 +83,41 @@ var complexTests = [][]string{
 	// expansion tests
 	{"key=value\nkey2=${key}", "key", "value", "key2", "value"},
 	{"key=value\nkey2=${key}\nkey3=${key2}", "key", "value", "key2", "value", "key3", "value"},
-
-	// circular references
-	{"key=${key}", "key", "${key}"},
-	{"key1=${key2}\nkey2=${key1}", "key1", "${key2}", "key2", "${key1}"},
-
-	// malformed expressions
-	{"key=${ke", "key", "${ke"},
-	{"key=valu${ke", "key", "valu${ke"},
 }
 
 // define error test cases in the form of
 // {"input", "expected error message"}
 var errorTests = [][]string{
-	{"key\\u1 = value", "invalid unicode literal"},
-	{"key\\u12 = value", "invalid unicode literal"},
-	{"key\\u123 = value", "invalid unicode literal"},
-	{"key\\u123g = value", "invalid unicode literal"},
-	{"key\\u123", "invalid unicode literal"},
+	// unicode literals
+	{"key\\u1 = value", "Invalid unicode literal"},
+	{"key\\u12 = value", "Invalid unicode literal"},
+	{"key\\u123 = value", "Invalid unicode literal"},
+	{"key\\u123g = value", "Invalid unicode literal"},
+	{"key\\u123", "Invalid unicode literal"},
+
+	// circular references
+	{"key=${key}", "Circular reference"},
+	{"key1=${key2}\nkey2=${key1}", "Circular reference"},
+
+	// malformed expressions
+	{"key=${ke", "Malformed expression"},
+	{"key=valu${ke", "Malformed expression"},
 }
 
 // define write encoding test cases in the form of
-// {"input", "expected output after write"}
+// {"input", "expected output after write", ["UTF-8", "ISO-8859-1"]}
 var writeTests = [][]string{
-	{"key = value", "key = value\n"},
-	{"key = value \\\n   continued", "key = value continued\n"},
-	{"key⌘ = value", "key\\u2318 = value\n"},
-	{"ke\\ \\:y = value", "ke\\ \\:y = value\n"},
+	// ISO-8859-1 tests
+	{"key = value", "key = value\n", "ISO-8859-1"},
+	{"key = value \\\n   continued", "key = value continued\n", "ISO-8859-1"},
+	{"key⌘ = value", "key\\u2318 = value\n", "ISO-8859-1"},
+	{"ke\\ \\:y = value", "ke\\ \\:y = value\n", "ISO-8859-1"},
+
+	// UTF-8 tests
+	{"key = value", "key = value\n", "UTF-8"},
+	{"key = value \\\n   continued", "key = value continued\n", "UTF-8"},
+	{"key⌘ = value⌘", "key⌘ = value⌘\n", "UTF-8"},
+	{"ke\\ \\:y = value", "ke\\ \\:y = value\n", "UTF-8"},
 }
 
 // Benchmarks the decoder by creating a property file with 1000 key/value pairs.
@@ -149,11 +157,17 @@ func (l *TestSuite) TestErrors(c *C) {
 // Test write encoding.
 func (l *TestSuite) TestWrite(c *C) {
 	for _, test := range writeTests {
-		input, output := test[0], test[1]
+		input, output, enc := test[0], test[1], test[2]
 		p, err := parse(input)
 
 		buf := new(bytes.Buffer)
-		n, err := p.Write(buf)
+		var n int
+		switch enc {
+		case "UTF-8":
+			n, err = p.Write(buf, UTF8)
+		case "ISO-8859-1":
+			n, err = p.Write(buf, ISO_8859_1)
+		}
 		c.Assert(err, IsNil)
 		s := string(buf.Bytes())
 		c.Assert(n, Equals, len(output), Commentf("input=%q expected=%q obtained=%q", input, output, s))

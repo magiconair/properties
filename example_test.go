@@ -31,9 +31,9 @@ func ExampleLoad_UTF8() {
 	// UTF-8 value with unicode character ⌘ and umlaut ä
 }
 
-func Example_Properties_GetDefault() {
+func Example_Properties_GetString() {
 	p, _ := Load([]byte("key=value"), ISO_8859_1)
-	v := p.GetDefault("another key", "default value")
+	v := p.GetString("another key", "default value")
 	fmt.Println(v)
 	// Output:
 	// default value
@@ -57,7 +57,7 @@ func Example() {
 	}
 
 	// Get a key with a default value
-	v := p.GetDefault("does not exist", "some value")
+	v := p.GetString("does not exist", "some value")
 	fmt.Println(v)
 
 	// Dump the expanded key/value pairs of the Properties
