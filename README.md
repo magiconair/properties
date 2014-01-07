@@ -16,7 +16,7 @@ Install
 Documentation
 -------------
 
-See http://godoc.org/github.com/magiconair/goproperties
+See [![GoDoc](https://godoc.org/github.com/magiconair/goproperties?status.png)](https://godoc.org/github.com/magiconair/goproperties)
 
 
 History
