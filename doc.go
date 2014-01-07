@@ -11,9 +11,9 @@
 // literals can be used in UTF-8 encoded properties files but
 // aren't necessary.
 //
-// All of the different key/value delimiters " :=" are supported
-// as well as the comment characters '!' and '#' and multi-line
-// values.
+// All of the different key/value delimiters ' ', ':' and '=' are
+// supported as well as the comment characters '!' and '#' and
+// multi-line values.
 //
 //   ! this is a comment
 //   # and so is this
@@ -27,8 +27,8 @@
 //   key = val\
 //         ue
 //
-// Property expansion is recursive and circular references 
-// and malformed expressions are not allowed and cause an 
+// Property expansion is recursive and circular references
+// and malformed expressions are not allowed and cause an
 // error.
 //
 //   # standard property
@@ -37,7 +37,7 @@
 //   # property expansion: key2 = value
 //   key2 = ${key}
 //
-//   # recursive property expansion: key3 = value
+//   # recursive expansion: key3 = value
 //   key3 = ${key2}
 //
 //   # circular reference (error)
@@ -53,6 +53,22 @@
 //   p := goproperties.NewProperties()
 //   p.Prefix = "#["
 //   p.Postfix = "]#"
+//
+// Properties provides convenience functions for getting typed
+// values with default values if the key does not exist or the
+// type conversion failed.
+//
+//   # Returns true if the value is either "1", "on", "yes" or "true"
+//   # Returns false for every other value and the default value if
+//   # the key does not exist.
+//   v = p.GetBool("key", false)
+//
+//   # Returns the value if the key exists and the format conversion
+//   # was successful. Otherwise, the default value is returned.
+//   v = p.GetInt64("key", 999)
+//   v = p.GetUint64("key", 999)
+//   v = p.GetFloat64("key", 123.0)
+//   v = p.GetString("key", "def")
 //
 // The following documents provide a description of the properties
 // file format.
