@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 //
-// Parts of the lexer are taken from the template/text/parser package
+// Parts of the lexer are from the template/text/parser package
 // For these parts the following applies:
 //
 // Copyright 2011 The Go Authors. All rights reserved.
@@ -96,7 +96,6 @@ func (l *lexer) backup() {
 // emit passes an item back to the client.
 func (l *lexer) emit(t itemType) {
 	item := item{t, l.start, string(l.runes)}
-	// log.Printf("lex.emit: %s", item)
 	l.items <- item
 	l.start = l.pos
 	l.runes = l.runes[:0]
@@ -183,7 +182,6 @@ func (l *lexer) run() {
 
 // lexBeforeKey scans until a key begins.
 func lexBeforeKey(l *lexer) stateFn {
-	// fmt.Println("lexBeforeKey")
 	switch r := l.next(); {
 	case isEOF(r):
 		l.emit(itemEOF)
@@ -224,9 +222,8 @@ func lexComment(l *lexer) stateFn {
 
 // lexKey scans the key up to a delimiter
 func lexKey(l *lexer) stateFn {
-	// fmt.Println("lexKey")
-
 	var r rune
+
 Loop:
 	for {
 		switch r = l.next(); {
@@ -265,7 +262,6 @@ Loop:
 // Leading and trailing whitespace is ignored.
 // We expect to be just after the key.
 func lexBeforeValue(l *lexer) stateFn {
-	// fmt.Println("lexBeforeValue")
 	l.acceptRun(whitespace)
 	l.accept(":=")
 	l.acceptRun(whitespace)
@@ -275,8 +271,6 @@ func lexBeforeValue(l *lexer) stateFn {
 
 // lexValue scans text until the end of the line. We expect to be just after the delimiter.
 func lexValue(l *lexer) stateFn {
-	// fmt.Println("lexValue")
-
 	for {
 		switch r := l.next(); {
 		case isEscape(r):
@@ -293,8 +287,6 @@ func lexValue(l *lexer) stateFn {
 
 		case isEOL(r):
 			l.emit(itemValue)
-
-			// ignore the new line
 			l.ignore()
 			return lexBeforeKey
 
@@ -328,7 +320,6 @@ func (l *lexer) scanEscapeSequence() error {
 	default:
 		l.appendRune(r)
 		return nil
-		// return fmt.Errorf("invalid escape sequence %s", string(r))
 	}
 }
 
