@@ -1,40 +1,28 @@
 Overview
 ========
 
-goproperties is a Go library for reading and writing Java property files.
+goproperties is a Go library for reading and writing properties files.
 
-It supports reading properties from multiple files and Spring style property
-expansion of expressions of '${key}' to their corresponding value.
+It supports reading from multiple files and Spring style recursive property
+expansion of expressions like '${key}' to their corresponding value.
 
-The current version supports reading both ISO-8859-1 and UTF-8 encoded data.
+The current version supports both ISO-8859-1 and UTF-8 encoded data.
 
 Install
 -------
 
 	$ go get github.com/magiconair/goproperties
 
-Usage
------
+Documentation
+-------------
 
-	p := goproperties.MustLoadFile(filename, goproperties.ISO_8859_1)
-	value, ok := p.Get("key")
-	if ok {
-		fmt.Println(value)
-	}
+See http://godoc.org/github.com/magiconair/goproperties
 
-or
-
-	// load multiple files and ignore missing files
-	p := goproperties.MustLoadFiles([]string{filename1, filename2}, true, goproperties.ISO_8859_1)
-	value, ok := p.Get("key")
-	if ok {
-		fmt.Println(value)
-	}
 
 History
 -------
 
-v1.0, 6 Jan 2014 - Initial release
+v1.0.0, 7 Jan 2014 - Initial release
 
 License
 -------
