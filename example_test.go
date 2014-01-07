@@ -10,7 +10,7 @@ import (
 )
 
 func ExampleLoad_iso88591() {
-	buf = append(buf, 0xE4) // 0xE4 == ä
+	buf := []byte("key = ISO-8859-1 value with unicode literal \\u2318 and umlaut \xE4") // 0xE4 == ä
 	p, _ := Load(buf, ISO_8859_1)
 	v, ok := p.Get("key")
 	fmt.Println(ok)
