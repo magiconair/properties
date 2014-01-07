@@ -16,8 +16,7 @@ Install
 Usage
 -----
 
-	p, err := goproperties.MustLoadFile(filename)
-
+	p := goproperties.MustLoadFile(filename, goproperties.ISO_8859_1)
 	value, ok := p.Get("key")
 	if ok {
 		fmt.Println(value)
@@ -25,11 +24,8 @@ Usage
 
 or
 
-	p, err := goproperties.DecodeString("key = value")
-	if err != nil {
-		// handle error
-	}
-
+	// load multiple files and ignore missing files
+	p := goproperties.MustLoadFiles([]string{filename1, filename2}, true, goproperties.ISO_8859_1)
 	value, ok := p.Get("key")
 	if ok {
 		fmt.Println(value)
@@ -38,7 +34,7 @@ or
 History
 -------
 
-v0.9, 17 Dec 2013 - Initial release
+v1.0, 6 Jan 2014 - Initial release
 
 License
 -------
