@@ -132,15 +132,6 @@ func (p *Properties) Set(key, value string) (prev string, ok bool, err error) {
 	return v, ok, nil
 }
 
-// Dump returns a string of all unexpanded 'key = value' pairs.
-func (p *Properties) Dump() string {
-	var s string
-	for key, value := range p.m {
-		s = fmt.Sprintf("%s%s = %s\n", s, key, value)
-	}
-	return s
-}
-
 // String returns a string of all expanded 'key = value' pairs.
 func (p *Properties) String() string {
 	var s string
