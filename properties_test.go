@@ -24,6 +24,8 @@ var (
 	verbose = flag.Bool("verbose", false, "Verbose output")
 )
 
+// ----------------------------------------------------------------------------
+
 // define test cases in the form of
 // {"input", "key1", "value1", "key2", "value2", ...}
 var complexTests = [][]string{
@@ -120,33 +122,138 @@ var writeTests = [][]string{
 	{"ke\\ \\:y = value", "ke\\ \\:y = value\n", "UTF-8"},
 }
 
-// Benchmarks the decoder by creating a property file with 1000 key/value pairs.
-func BenchmarkDecoder(b *testing.B) {
-	input := ""
-	for i := 0; i < 1000; i++ {
-		input += fmt.Sprintf("key%d=value%d\n", i, i)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		Load([]byte(input), ISO_8859_1)
-	}
+// ----------------------------------------------------------------------------
+
+type boolTest struct {
+	input, key string
+	def, value bool
 }
 
-// tests basic single key/value combinations with all possible whitespace, delimiter and newline permutations.
+var boolTests = []*boolTest{
+	// valid values for TRUE
+	&boolTest{"key = 1", "key", false, true},
+	&boolTest{"key = on", "key", false, true},
+	&boolTest{"key = On", "key", false, true},
+	&boolTest{"key = ON", "key", false, true},
+	&boolTest{"key = true", "key", false, true},
+	&boolTest{"key = True", "key", false, true},
+	&boolTest{"key = TRUE", "key", false, true},
+	&boolTest{"key = yes", "key", false, true},
+	&boolTest{"key = Yes", "key", false, true},
+	&boolTest{"key = YES", "key", false, true},
+
+	// valid values for FALSE (all other)
+	&boolTest{"key = 0", "key", true, false},
+	&boolTest{"key = off", "key", true, false},
+	&boolTest{"key = false", "key", true, false},
+	&boolTest{"key = no", "key", true, false},
+
+	// non existent key
+	&boolTest{"key = true", "key2", false, false},
+}
+
+// ----------------------------------------------------------------------------
+
+type floatTest struct {
+	input, key string
+	def, value float64
+}
+
+var floatTests = []*floatTest{
+	// valid values
+	&floatTest{"key = 1.0", "key", 999, 1.0},
+	&floatTest{"key = 0.0", "key", 999, 0.0},
+	&floatTest{"key = -1.0", "key", 999, -1.0},
+	&floatTest{"key = 1", "key", 999, 1},
+	&floatTest{"key = 0", "key", 999, 0},
+	&floatTest{"key = -1", "key", 999, -1},
+	&floatTest{"key = 0123", "key", 999, 123},
+
+	// invalid values
+	&floatTest{"key = 0xff", "key", 999, 999},
+	&floatTest{"key = a", "key", 999, 999},
+
+	// non existent key
+	&floatTest{"key = 1", "key2", 999, 999},
+}
+
+// ----------------------------------------------------------------------------
+
+type intTest struct {
+	input, key string
+	def, value int64
+}
+
+var intTests = []*intTest{
+	// valid values
+	&intTest{"key = 1", "key", 999, 1},
+	&intTest{"key = 0", "key", 999, 0},
+	&intTest{"key = -1", "key", 999, -1},
+	&intTest{"key = 0123", "key", 999, 123},
+
+	// invalid values
+	&intTest{"key = 0xff", "key", 999, 999},
+	&intTest{"key = 1.0", "key", 999, 999},
+	&intTest{"key = a", "key", 999, 999},
+
+	// non existent key
+	&intTest{"key = 1", "key2", 999, 999},
+}
+
+// ----------------------------------------------------------------------------
+
+type uintTest struct {
+	input, key string
+	def, value uint64
+}
+
+var uintTests = []*uintTest{
+	// valid values
+	&uintTest{"key = 1", "key", 999, 1},
+	&uintTest{"key = 0", "key", 999, 0},
+	&uintTest{"key = 0123", "key", 999, 123},
+
+	// invalid values
+	&uintTest{"key = -1", "key", 999, 999},
+	&uintTest{"key = 0xff", "key", 999, 999},
+	&uintTest{"key = 1.0", "key", 999, 999},
+	&uintTest{"key = a", "key", 999, 999},
+
+	// non existent key
+	&uintTest{"key = 1", "key2", 999, 999},
+}
+
+// ----------------------------------------------------------------------------
+
+type stringTest struct {
+	input, key string
+	def, value string
+}
+
+var stringTests = []*stringTest{
+	// valid values
+	&stringTest{"key = abc", "key", "def", "abc"},
+
+	// non existent key
+	&stringTest{"key = abc", "key2", "def", "def"},
+}
+
+// ----------------------------------------------------------------------------
+
+// TestBasic tests basic single key/value combinations with all possible 
+// whitespace, delimiter and newline permutations.
 func (l *TestSuite) TestBasic(c *C) {
-	testAllCombinations(c, "key", "")
-	testAllCombinations(c, "key", "value")
-	testAllCombinations(c, "key", "value   ")
+	testWhitespaceAndDelimiterCombinations(c, "key", "")
+	testWhitespaceAndDelimiterCombinations(c, "key", "value")
+	testWhitespaceAndDelimiterCombinations(c, "key", "value   ")
 }
 
-// tests more complex cases.
 func (l *TestSuite) TestComplex(c *C) {
 	for _, test := range complexTests {
 		testKeyValue(c, test[0], test[1:]...)
 	}
 }
 
-// tests error cases.
 func (l *TestSuite) TestErrors(c *C) {
 	for _, test := range errorTests {
 		input, msg := test[0], test[1]
@@ -154,7 +261,51 @@ func (l *TestSuite) TestErrors(c *C) {
 	}
 }
 
-// Test write encoding.
+func (l *TestSuite) TestGetBool(c *C) {
+	for _, test := range boolTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.Len(), Equals, 1)
+		c.Assert(p.GetBool(test.key, test.def), Equals, test.value)
+	}
+}
+
+func (l *TestSuite) TestGetFloat64(c *C) {
+	for _, test := range floatTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.Len(), Equals, 1)
+		c.Assert(p.GetFloat64(test.key, test.def), Equals, test.value)
+	}
+}
+
+func (l *TestSuite) TestGetInt64(c *C) {
+	for _, test := range intTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.Len(), Equals, 1)
+		c.Assert(p.GetInt64(test.key, test.def), Equals, test.value)
+	}
+}
+
+func (l *TestSuite) TestGetUint64(c *C) {
+	for _, test := range uintTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.Len(), Equals, 1)
+		c.Assert(p.GetUint64(test.key, test.def), Equals, test.value)
+	}
+}
+
+func (l *TestSuite) TestGetString(c *C) {
+	for _, test := range stringTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.Len(), Equals, 1)
+		c.Assert(p.GetString(test.key, test.def), Equals, test.value)
+	}
+}
+
 func (l *TestSuite) TestWrite(c *C) {
 	for _, test := range writeTests {
 		input, output, enc := test[0], test[1], test[2]
@@ -175,8 +326,10 @@ func (l *TestSuite) TestWrite(c *C) {
 	}
 }
 
+// ----------------------------------------------------------------------------
+
 // tests all combinations of delimiters, leading and/or trailing whitespace and newlines.
-func testAllCombinations(c *C, key, value string) {
+func testWhitespaceAndDelimiterCombinations(c *C, key, value string) {
 	whitespace := []string{"", " ", "\f", "\t"}
 	delimiters := []string{"", " ", "=", ":"}
 	newlines := []string{"", "\r", "\n", "\r\n"}
