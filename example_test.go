@@ -63,9 +63,6 @@ func Example() {
 	fmt.Println("Expanded key/value pairs")
 	fmt.Println(p)
 
-	// Dump the raw key/value pairs.
-	fmt.Println("Raw key/value pairs")
-	fmt.Println(p.Dump())
 	// Output:
 	// value
 	// invalid key
@@ -73,8 +70,4 @@ func Example() {
 	// Expanded key/value pairs
 	// key = value
 	// key2 = value
-	//
-	// Raw key/value pairs
-	// key = value
-	// key2 = ${key}
 }
