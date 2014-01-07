@@ -30,7 +30,27 @@ func ExampleLoad_utf8() {
 	// UTF-8 value with unicode character ⌘ and umlaut ä
 }
 
-func Example_Properties_GetString() {
+func ExampleProperties_GetBool() {
+	var input = `
+	key=1
+	key2=On
+	key3=YES
+	key4=true`
+	p, _ := Load([]byte(input), ISO_8859_1)
+	fmt.Println(p.GetBool("key", false))
+	fmt.Println(p.GetBool("key2", false))
+	fmt.Println(p.GetBool("key3", false))
+	fmt.Println(p.GetBool("key4", false))
+	fmt.Println(p.GetBool("keyX", false))
+	// Output:
+	// true
+	// true
+	// true
+	// true
+	// false
+}
+
+func ExampleProperties_GetString() {
 	p, _ := Load([]byte("key=value"), ISO_8859_1)
 	v := p.GetString("another key", "default value")
 	fmt.Println(v)
