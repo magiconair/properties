@@ -60,10 +60,10 @@ func (p *Properties) GetBool(key string, def bool) bool {
 	return def
 }
 
-// GetFloat parses the expanded value as a float64 if the key exists.
+// GetFloat64 parses the expanded value as a float64 if the key exists.
 // If key does not exist or the value cannot be parsed the default
 // value is returned.
-func (p *Properties) GetFloat(key string, def float64) float64 {
+func (p *Properties) GetFloat64(key string, def float64) float64 {
 	if v, ok := p.Get(key); ok {
 		n, err := strconv.ParseFloat(v, 64)
 		if err != nil {
@@ -74,10 +74,10 @@ func (p *Properties) GetFloat(key string, def float64) float64 {
 	return def
 }
 
-// GetInt parses the expanded value as an int if the key exists.
+// GetInt64 parses the expanded value as an int if the key exists.
 // If key does not exist or the value cannot be parsed the default
 // value is returned.
-func (p *Properties) GetInt(key string, def int64) int64 {
+func (p *Properties) GetInt64(key string, def int64) int64 {
 	if v, ok := p.Get(key); ok {
 		n, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
@@ -88,10 +88,10 @@ func (p *Properties) GetInt(key string, def int64) int64 {
 	return def
 }
 
-// GetUint parses the expanded value as an uint64 if the key exists.
+// GetUint64 parses the expanded value as an uint64 if the key exists.
 // If key does not exist or the value cannot be parsed the default
 // value is returned.
-func (p *Properties) GetUint(key string, def uint64) uint64 {
+func (p *Properties) GetUint64(key string, def uint64) uint64 {
 	if v, ok := p.Get(key); ok {
 		n, err := strconv.ParseUint(v, 10, 64)
 		if err != nil {
