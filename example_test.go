@@ -9,8 +9,7 @@ import (
 	"log"
 )
 
-func ExampleLoad_ISO() {
-	buf := []byte("key = ISO-8859-1 value with unicode literal \\u2318 and umlaut ")
+func ExampleLoad_iso88591() {
 	buf = append(buf, 0xE4) // 0xE4 == ä
 	p, _ := Load(buf, ISO_8859_1)
 	v, ok := p.Get("key")
@@ -21,7 +20,7 @@ func ExampleLoad_ISO() {
 	// ISO-8859-1 value with unicode literal ⌘ and umlaut ä
 }
 
-func ExampleLoad_UTF8() {
+func ExampleLoad_utf8() {
 	p, _ := Load([]byte("key = UTF-8 value with unicode character ⌘ and umlaut ä"), UTF8)
 	v, ok := p.Get("key")
 	fmt.Println(ok)
