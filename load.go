@@ -10,6 +10,13 @@ import (
 	"os"
 )
 
+type Encoding uint
+
+const (
+	UTF8 Encoding = 1 << iota
+	ISO_8859_1
+)
+
 // Load reads a buffer into a Properties struct.
 func Load(buf []byte, enc Encoding) (*Properties, error) {
 	return loadBuf(buf, enc)
@@ -41,13 +48,6 @@ func MustLoadFiles(filenames []string, enc Encoding, ignoreMissing bool) *Proper
 }
 
 // ----------------------------------------------------------------------------
-
-type Encoding uint
-
-const (
-	UTF8 Encoding = 1 << iota
-	ISO_8859_1
-)
 
 func loadBuf(buf []byte, enc Encoding) (*Properties, error) {
 	p, err := parse(convert(buf, enc))
