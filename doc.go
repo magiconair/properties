@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// goproperties provides functions for reading and writing
+// properties provides functions for reading and writing
 // ISO-8859-1 and UTF-8 encoded .properties files and has
 // support for recursive property expansion.
 //
@@ -10,6 +10,22 @@
 // literals for characters outside the ISO character set. Unicode
 // literals can be used in UTF-8 encoded properties files but
 // aren't necessary.
+//
+// To load a single properties file use MustLoadFile():
+//
+//   p := properties.MustLoadFile(filename, properties.UTF8)
+//
+// To load multiple properties files use MustLoadFiles()
+// which loads the files in the given order and merges the
+// result. Missing properties files can be ignored if the
+// 'ignoreMissing' flag is set to true.
+//
+// Filenames can contain environment variables which are expanded
+// before loading.
+//
+//   f1 := "/etc/myapp/myapp.conf"
+//   f2 := "/home/${USER}/myapp.conf"
+//   p := MustLoadFiles([]string{f1, f2}, properties.UTF8, true)
 //
 // All of the different key/value delimiters ' ', ':' and '=' are
 // supported as well as the comment characters '!' and '#' and
@@ -29,7 +45,7 @@
 //
 // Property expansion is recursive and circular references
 // and malformed expressions are not allowed and cause an
-// error.
+// error. Expansion of environment variables is supported.
 //
 //   # standard property
 //   key = value
@@ -46,11 +62,18 @@
 //   # malformed expression (error)
 //   key = ${ke
 //
+//   # refers to the users' home dir
+//   home = ${HOME}
+//
+//   # local key takes precendence over env var: u = foo
+//   USER = foo
+//   u = ${USER}
+//
 // The default property expansion format is ${key} but can be
 // changed by setting different pre- and postfix values on the
 // Properties object.
 //
-//   p := goproperties.NewProperties()
+//   p := properties.NewProperties()
 //   p.Prefix = "#["
 //   p.Postfix = "]#"
 //
