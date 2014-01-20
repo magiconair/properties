@@ -10,7 +10,7 @@
 // license that can be found in the LICENSE file of the go 1.2
 // distribution.
 
-package goproperties
+package properties
 
 import (
 	"fmt"

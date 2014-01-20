@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package goproperties
+package properties
 
 // BUG(frank): Set() does not check for invalid unicode literals since this is currently handled by the lexer.
 // BUG(frank): Write() does not allow to configure the newline character. Therefore, on Windows LF is used.

@@ -100,4 +100,4 @@
 //
 // http://docs.oracle.com/javase/7/docs/api/java/util/Properties.html#load%28java.io.Reader%29
 //
-package goproperties
+package properties
