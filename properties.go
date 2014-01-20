@@ -185,19 +185,21 @@ func (p *Properties) expand(input string) (string, error) {
 // The function keeps track of the keys that were already expanded and stops if it
 // detects a circular reference or a malformed expression of the form '(prefix)key'.
 func expand(s string, keys map[string]bool, prefix, postfix string, values map[string]string) (string, error) {
-	a := strings.Index(s, prefix)
-	if a == -1 {
+	start := strings.Index(s, prefix)
+	if start == -1 {
 		return s, nil
 	}
 
-	b := strings.Index(s[a:], postfix)
-	if b == -1 {
+	keyStart := start + len(prefix)
+	keyLen := strings.Index(s[keyStart:], postfix)
+	if keyLen == -1 {
 		return "", fmt.Errorf("Malformed expression")
 	}
 
-	keyStart := a + len(prefix)
-	keyEnd := keyStart + b - len(postfix) - 1
-	key := s[keyStart:keyEnd]
+	end := keyStart + keyLen + len(postfix) - 1
+	key := s[keyStart : keyStart+keyLen]
+
+	// fmt.Printf("s:%q pp:%q start:%d end:%d keyStart:%d keyLen:%d key:%q\n", s, prefix + "..." + postfix, start, end, keyStart, keyLen, key)
 
 	if _, ok := keys[key]; ok {
 		return "", fmt.Errorf("Circular reference")
@@ -211,7 +213,7 @@ func expand(s string, keys map[string]bool, prefix, postfix string, values map[s
 	// remember that we've seen the key
 	keys[key] = true
 
-	return expand(s[:a]+val+s[a+b+1:], keys, prefix, postfix, values)
+	return expand(s[:start]+val+s[end+1:], keys, prefix, postfix, values)
 }
 
 // encode encodes a UTF-8 string to ISO-8859-1 and escapes some characters.
