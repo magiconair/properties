@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	. "launchpad.net/gocheck"
 )
@@ -65,6 +66,15 @@ func (s *LoadSuite) TestLoadFiles(c *C) {
 
 // ----------------------------------------------------------------------------
 
+func (s *LoadSuite) TestLoadExpandedFile(c *C) {
+	filename := s.makeFilePrefix(c, os.Getenv("USER"), "key=value")
+	filename = strings.Replace(filename, os.Getenv("USER"), "${USER}", -1)
+	p := MustLoadFile(filename, ISO_8859_1)
+	assertKeyValues(c, "", p, "key", "value")
+}
+
+// ----------------------------------------------------------------------------
+
 func (s *LoadSuite) TestLoadFilesAndIgnoreMissing(c *C) {
 	filename := s.makeFile(c, "key=value")
 	filename2 := s.makeFile(c, "key2=value2")
@@ -92,7 +102,13 @@ func (s *LoadSuite) TearDownSuite(c *C) {
 // ----------------------------------------------------------------------------
 
 func (s *LoadSuite) makeFile(c *C, data string) string {
-	f, err := ioutil.TempFile("", "properties")
+	return s.makeFilePrefix(c, "properties", data)
+}
+
+// ----------------------------------------------------------------------------
+
+func (s *LoadSuite) makeFilePrefix(c *C, prefix, data string) string {
+	f, err := ioutil.TempFile("", prefix)
 	if err != nil {
 		fmt.Printf("ioutil.TempFile: %v", err)
 		c.FailNow()

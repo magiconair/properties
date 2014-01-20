@@ -10,6 +10,7 @@ package goproperties
 import (
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -171,44 +172,46 @@ func (p *Properties) check() error {
 	return nil
 }
 
-// expand recursively expands expressions of '(prefix)key(postfix)' to their corresponding values.
-// The function keeps track of the keys that were already expanded and stops if it
-// detects a circular reference or a malformed expression.
 func (p *Properties) expand(input string) (string, error) {
 	// no pre/postfix -> nothing to expand
 	if p.Prefix == "" && p.Postfix == "" {
 		return input, nil
 	}
 
-	return p.doExpand(input, make(map[string]bool))
+	return expand(input, make(map[string]bool), p.Prefix, p.Postfix, p.m)
 }
 
-func (p *Properties) doExpand(s string, keys map[string]bool) (string, error) {
-	a := strings.Index(s, p.Prefix)
+// expand recursively expands expressions of '(prefix)key(postfix)' to their corresponding values.
+// The function keeps track of the keys that were already expanded and stops if it
+// detects a circular reference or a malformed expression of the form '(prefix)key'.
+func expand(s string, keys map[string]bool, prefix, postfix string, values map[string]string) (string, error) {
+	a := strings.Index(s, prefix)
 	if a == -1 {
 		return s, nil
 	}
 
-	b := strings.Index(s[a:], p.Postfix)
+	b := strings.Index(s[a:], postfix)
 	if b == -1 {
 		return "", fmt.Errorf("Malformed expression")
 	}
 
-	key := s[a+len(p.Prefix) : b-len(p.Postfix)+1]
+	keyStart := a + len(prefix)
+	keyEnd := keyStart + b - len(postfix) - 1
+	key := s[keyStart:keyEnd]
 
 	if _, ok := keys[key]; ok {
 		return "", fmt.Errorf("Circular reference")
 	}
 
-	val, ok := p.m[key]
+	val, ok := values[key]
 	if !ok {
-		val = ""
+		val = os.Getenv(key)
 	}
 
 	// remember that we've seen the key
 	keys[key] = true
 
-	return p.doExpand(s[:a]+val+s[b+1:], keys)
+	return expand(s[:a]+val+s[a+b+1:], keys, prefix, postfix, values)
 }
 
 // encode encodes a UTF-8 string to ISO-8859-1 and escapes some characters.

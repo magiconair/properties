@@ -85,6 +85,7 @@ var complexTests = [][]string{
 	// expansion tests
 	{"key=value\nkey2=${key}", "key", "value", "key2", "value"},
 	{"key=value\nkey2=${key}\nkey3=${key2}", "key", "value", "key2", "value", "key3", "value"},
+	{"key=${USER}", "key", os.Getenv("USER")},
 }
 
 // define error test cases in the form of
@@ -240,7 +241,7 @@ var stringTests = []*stringTest{
 
 // ----------------------------------------------------------------------------
 
-// TestBasic tests basic single key/value combinations with all possible 
+// TestBasic tests basic single key/value combinations with all possible
 // whitespace, delimiter and newline permutations.
 func (l *TestSuite) TestBasic(c *C) {
 	testWhitespaceAndDelimiterCombinations(c, "key", "")

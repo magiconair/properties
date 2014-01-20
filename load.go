@@ -62,7 +62,12 @@ func loadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Propertie
 	buff := make([]byte, 0, 4096)
 
 	for _, filename := range filenames {
-		buf, err := ioutil.ReadFile(filename)
+		f, err := expandFilename(filename)
+		if err != nil {
+			return nil, err
+		}
+
+		buf, err := ioutil.ReadFile(f)
 		if err != nil {
 			if ignoreMissing && os.IsNotExist(err) {
 				// TODO(frank): should we log that we are skipping the file?
@@ -85,6 +90,14 @@ func mustLoadFiles(filenames []string, enc Encoding, ignoreMissing bool) *Proper
 		panic(err)
 	}
 	return p
+}
+
+// expandFilename expands ${ENV_VAR} expressions in a filename.
+// If the environment variable does not exist then it will be replaced
+// with an empty string. Malformed expressions like "${ENV_VAR" will
+// be reported as error.
+func expandFilename(filename string) (string, error) {
+	return expand(filename, make(map[string]bool), "${", "}", make(map[string]string))
 }
 
 // Interprets a byte buffer either as an ISO-8859-1 or UTF-8 encoded string.
