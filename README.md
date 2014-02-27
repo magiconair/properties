@@ -44,3 +44,10 @@ License
 
 2 clause BSD license. See LICENSE file for details.
 
+ToDo
+----
+* Add MustGet ... functions
+* Add support for int and uint
+* Dump contents to stdout with passwords and secrets obscured
+* panic on non-existent key
+* log non-existent key
