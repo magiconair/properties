@@ -266,6 +266,14 @@ func (l *TestSuite) TestErrors(c *C) {
 	}
 }
 
+func (l *TestSuite) TestMustGet(c *C) {
+	input := "key = value\nkey2 = ghi"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGet("key"), Equals, "value")
+	c.Assert(func() { p.MustGet("invalid") }, PanicMatches, "invalid key: invalid")
+}
+
 func (l *TestSuite) TestGetBool(c *C) {
 	for _, test := range boolTests {
 		p, err := parse(test.input)
@@ -273,6 +281,14 @@ func (l *TestSuite) TestGetBool(c *C) {
 		c.Assert(p.Len(), Equals, 1)
 		c.Assert(p.GetBool(test.key, test.def), Equals, test.value)
 	}
+}
+
+func (l *TestSuite) TestMustGetBool(c *C) {
+	input := "key = true\nkey2 = ghi"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetBool("key"), Equals, true)
+	c.Assert(func() { p.MustGetBool("invalid") }, PanicMatches, "invalid key: invalid")
 }
 
 func (l *TestSuite) TestGetFloat64(c *C) {
@@ -284,6 +300,15 @@ func (l *TestSuite) TestGetFloat64(c *C) {
 	}
 }
 
+func (l *TestSuite) TestMustGetFloat64(c *C) {
+	input := "key = 123\nkey2 = ghi"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetFloat64("key"), Equals, float64(123))
+	c.Assert(func() { p.MustGetFloat64("key2") }, PanicMatches, "strconv.ParseFloat: parsing.*")
+	c.Assert(func() { p.MustGetFloat64("invalid") }, PanicMatches, "invalid key: invalid")
+}
+
 func (l *TestSuite) TestGetInt64(c *C) {
 	for _, test := range intTests {
 		p, err := parse(test.input)
@@ -291,6 +316,15 @@ func (l *TestSuite) TestGetInt64(c *C) {
 		c.Assert(p.Len(), Equals, 1)
 		c.Assert(p.GetInt64(test.key, test.def), Equals, test.value)
 	}
+}
+
+func (l *TestSuite) TestMustGetInt64(c *C) {
+	input := "key = 123\nkey2 = ghi"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetInt64("key"), Equals, int64(123))
+	c.Assert(func() { p.MustGetInt64("key2") }, PanicMatches, "strconv.ParseInt: parsing.*")
+	c.Assert(func() { p.MustGetInt64("invalid") }, PanicMatches, "invalid key: invalid")
 }
 
 func (l *TestSuite) TestGetUint64(c *C) {
@@ -302,6 +336,15 @@ func (l *TestSuite) TestGetUint64(c *C) {
 	}
 }
 
+func (l *TestSuite) TestMustGetUint64(c *C) {
+	input := "key = 123\nkey2 = ghi"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetUint64("key"), Equals, uint64(123))
+	c.Assert(func() { p.MustGetUint64("key2") }, PanicMatches, "strconv.ParseUint: parsing.*")
+	c.Assert(func() { p.MustGetUint64("invalid") }, PanicMatches, "invalid key: invalid")
+}
+
 func (l *TestSuite) TestGetString(c *C) {
 	for _, test := range stringTests {
 		p, err := parse(test.input)
@@ -309,6 +352,14 @@ func (l *TestSuite) TestGetString(c *C) {
 		c.Assert(p.Len(), Equals, 1)
 		c.Assert(p.GetString(test.key, test.def), Equals, test.value)
 	}
+}
+
+func (l *TestSuite) TestMustGetString(c *C) {
+	input := `key = value`
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetString("key"), Equals, "value")
+	c.Assert(func() { p.MustGetString("invalid") }, PanicMatches, "invalid key: invalid")
 }
 
 func (l *TestSuite) TestWrite(c *C) {

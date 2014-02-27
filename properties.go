@@ -34,7 +34,8 @@ func NewProperties() *Properties {
 	}
 }
 
-// Get returns the expanded value for the given key if exists. Otherwise, ok is false.
+// Get returns the expanded value for the given key if exists.
+// Otherwise, ok is false.
 func (p *Properties) Get(key string) (value string, ok bool) {
 	v, ok := p.m[key]
 	if !ok {
@@ -53,66 +54,170 @@ func (p *Properties) Get(key string) (value string, ok bool) {
 	return expanded, true
 }
 
+// MustGet returns the expanded value for the given key if exists.
+// Otherwise, it panics.
+func (p *Properties) MustGet(key string) string {
+	if v, ok := p.Get(key); ok {
+		return v
+	}
+	panic(invalidKeyError(key))
+}
+
+// ----------------------------------------------------------------------------
+
 // GetBool checks if the expanded value is one of '1', 'yes',
 // 'true' or 'on' if the key exists. The comparison is case-insensitive.
 // If the key does not exist the default value is returned.
 func (p *Properties) GetBool(key string, def bool) bool {
+	v, err := p.getBool(key)
+	if err != nil {
+		return def
+	}
+	return v
+}
+
+// MustGetBool checks if the expanded value is one of '1', 'yes',
+// 'true' or 'on' if the key exists. The comparison is case-insensitive.
+// If the key does not exist the function panics.
+func (p *Properties) MustGetBool(key string) bool {
+	v, err := p.getBool(key)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+func (p *Properties) getBool(key string) (value bool, err error) {
 	if v, ok := p.Get(key); ok {
 		v = strings.ToLower(v)
-		return v == "1" || v == "true" || v == "yes" || v == "on"
+		return v == "1" || v == "true" || v == "yes" || v == "on", nil
 	}
-	return def
+	return false, invalidKeyError(key)
 }
+
+// ----------------------------------------------------------------------------
 
 // GetFloat64 parses the expanded value as a float64 if the key exists.
 // If key does not exist or the value cannot be parsed the default
 // value is returned.
 func (p *Properties) GetFloat64(key string, def float64) float64 {
-	if v, ok := p.Get(key); ok {
-		n, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			return def
-		}
-		return n
+	v, err := p.getFloat64(key)
+	if err != nil {
+		return def
 	}
-	return def
+	return v
 }
 
-// GetInt64 parses the expanded value as an int if the key exists.
+// GetFloat64 parses the expanded value as a float64 if the key exists.
+// If key does not exist or the value cannot be parsed the function panics.
+func (p *Properties) MustGetFloat64(key string) float64 {
+	v, err := p.getFloat64(key)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+func (p *Properties) getFloat64(key string) (value float64, err error) {
+	if v, ok := p.Get(key); ok {
+		value, err = strconv.ParseFloat(v, 64)
+		if err != nil {
+			return 0, err
+		}
+		return value, nil
+	}
+	return 0, invalidKeyError(key)
+}
+
+// ----------------------------------------------------------------------------
+
+// GetInt64 parses the expanded value as an int64 if the key exists.
 // If key does not exist or the value cannot be parsed the default
 // value is returned.
 func (p *Properties) GetInt64(key string, def int64) int64 {
-	if v, ok := p.Get(key); ok {
-		n, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return def
-		}
-		return n
+	v, err := p.getInt64(key)
+	if err != nil {
+		return def
 	}
-	return def
+	return v
 }
+
+// MustGetInt64 parses the expanded value as an int if the key exists.
+// If key does not exist or the value cannot be parsed the function panics.
+func (p *Properties) MustGetInt64(key string) int64 {
+	v, err := p.getInt64(key)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+func (p *Properties) getInt64(key string) (value int64, err error) {
+	if v, ok := p.Get(key); ok {
+		value, err = strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return value, nil
+	}
+	return 0, invalidKeyError(key)
+}
+
+// ----------------------------------------------------------------------------
 
 // GetUint64 parses the expanded value as an uint64 if the key exists.
 // If key does not exist or the value cannot be parsed the default
 // value is returned.
 func (p *Properties) GetUint64(key string, def uint64) uint64 {
-	if v, ok := p.Get(key); ok {
-		n, err := strconv.ParseUint(v, 10, 64)
-		if err != nil {
-			return def
-		}
-		return n
+	v, err := p.getUint64(key)
+	if err != nil {
+		return def
 	}
-	return def
+	return v
 }
 
-// GetString returns the expanded value for the given key if exists or the default value otherwise.
+// MustGetUint64 parses the expanded value as an int if the key exists.
+// If key does not exist or the value cannot be parsed the function panics.
+func (p *Properties) MustGetUint64(key string) uint64 {
+	v, err := p.getUint64(key)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+func (p *Properties) getUint64(key string) (value uint64, err error) {
+	if v, ok := p.Get(key); ok {
+		value, err = strconv.ParseUint(v, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return value, nil
+	}
+	return 0, invalidKeyError(key)
+}
+
+// ----------------------------------------------------------------------------
+
+// GetString returns the expanded value for the given key if exists or
+// the default value otherwise.
 func (p *Properties) GetString(key, def string) string {
 	if v, ok := p.Get(key); ok {
 		return v
 	}
 	return def
 }
+
+// MustGetString returns the expanded value for the given key if exists or
+// panics otherwise.
+func (p *Properties) MustGetString(key string) string {
+	if v, ok := p.Get(key); ok {
+		return v
+	}
+	panic(invalidKeyError(key))
+}
+
+// ----------------------------------------------------------------------------
 
 // Len returns the number of keys.
 func (p *Properties) Len() int {
@@ -272,4 +377,8 @@ func escape(r rune, special string) string {
 		}
 		return string(r)
 	}
+}
+
+func invalidKeyError(key string) error {
+	return fmt.Errorf("invalid key: %s", key)
 }
