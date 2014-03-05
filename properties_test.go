@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"testing"
@@ -184,48 +185,48 @@ var floatTests = []*floatTest{
 
 // ----------------------------------------------------------------------------
 
-type intTest struct {
+type int64Test struct {
 	input, key string
 	def, value int64
 }
 
-var intTests = []*intTest{
+var int64Tests = []*int64Test{
 	// valid values
-	&intTest{"key = 1", "key", 999, 1},
-	&intTest{"key = 0", "key", 999, 0},
-	&intTest{"key = -1", "key", 999, -1},
-	&intTest{"key = 0123", "key", 999, 123},
+	&int64Test{"key = 1", "key", 999, 1},
+	&int64Test{"key = 0", "key", 999, 0},
+	&int64Test{"key = -1", "key", 999, -1},
+	&int64Test{"key = 0123", "key", 999, 123},
 
 	// invalid values
-	&intTest{"key = 0xff", "key", 999, 999},
-	&intTest{"key = 1.0", "key", 999, 999},
-	&intTest{"key = a", "key", 999, 999},
+	&int64Test{"key = 0xff", "key", 999, 999},
+	&int64Test{"key = 1.0", "key", 999, 999},
+	&int64Test{"key = a", "key", 999, 999},
 
 	// non existent key
-	&intTest{"key = 1", "key2", 999, 999},
+	&int64Test{"key = 1", "key2", 999, 999},
 }
 
 // ----------------------------------------------------------------------------
 
-type uintTest struct {
+type uint64Test struct {
 	input, key string
 	def, value uint64
 }
 
-var uintTests = []*uintTest{
+var uint64Tests = []*uint64Test{
 	// valid values
-	&uintTest{"key = 1", "key", 999, 1},
-	&uintTest{"key = 0", "key", 999, 0},
-	&uintTest{"key = 0123", "key", 999, 123},
+	&uint64Test{"key = 1", "key", 999, 1},
+	&uint64Test{"key = 0", "key", 999, 0},
+	&uint64Test{"key = 0123", "key", 999, 123},
 
 	// invalid values
-	&uintTest{"key = -1", "key", 999, 999},
-	&uintTest{"key = 0xff", "key", 999, 999},
-	&uintTest{"key = 1.0", "key", 999, 999},
-	&uintTest{"key = a", "key", 999, 999},
+	&uint64Test{"key = -1", "key", 999, 999},
+	&uint64Test{"key = 0xff", "key", 999, 999},
+	&uint64Test{"key = 1.0", "key", 999, 999},
+	&uint64Test{"key = a", "key", 999, 999},
 
 	// non existent key
-	&uintTest{"key = 1", "key2", 999, 999},
+	&uint64Test{"key = 1", "key2", 999, 999},
 }
 
 // ----------------------------------------------------------------------------
@@ -309,8 +310,26 @@ func (l *TestSuite) TestMustGetFloat64(c *C) {
 	c.Assert(func() { p.MustGetFloat64("invalid") }, PanicMatches, "invalid key: invalid")
 }
 
+func (l *TestSuite) TestGetInt(c *C) {
+	for _, test := range int64Tests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.Len(), Equals, 1)
+		c.Assert(p.GetInt(test.key, int(test.def)), Equals, int(test.value))
+	}
+}
+
+func (l *TestSuite) TestMustGetInt(c *C) {
+	input := "key = 123\nkey2 = ghi"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetInt("key"), Equals, int(123))
+	c.Assert(func() { p.MustGetInt("key2") }, PanicMatches, "strconv.ParseInt: parsing.*")
+	c.Assert(func() { p.MustGetInt("invalid") }, PanicMatches, "invalid key: invalid")
+}
+
 func (l *TestSuite) TestGetInt64(c *C) {
-	for _, test := range intTests {
+	for _, test := range int64Tests {
 		p, err := parse(test.input)
 		c.Assert(err, IsNil)
 		c.Assert(p.Len(), Equals, 1)
@@ -327,8 +346,26 @@ func (l *TestSuite) TestMustGetInt64(c *C) {
 	c.Assert(func() { p.MustGetInt64("invalid") }, PanicMatches, "invalid key: invalid")
 }
 
+func (l *TestSuite) TestGetUint(c *C) {
+	for _, test := range uint64Tests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.Len(), Equals, 1)
+		c.Assert(p.GetUint(test.key, uint(test.def)), Equals, uint(test.value))
+	}
+}
+
+func (l *TestSuite) TestMustGetUint(c *C) {
+	input := "key = 123\nkey2 = ghi"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetUint("key"), Equals, uint(123))
+	c.Assert(func() { p.MustGetUint64("key2") }, PanicMatches, "strconv.ParseUint: parsing.*")
+	c.Assert(func() { p.MustGetUint64("invalid") }, PanicMatches, "invalid key: invalid")
+}
+
 func (l *TestSuite) TestGetUint64(c *C) {
-	for _, test := range uintTests {
+	for _, test := range uint64Tests {
 		p, err := parse(test.input)
 		c.Assert(err, IsNil)
 		c.Assert(p.Len(), Equals, 1)
@@ -384,6 +421,28 @@ func (l *TestSuite) TestWrite(c *C) {
 
 func (l *TestSuite) TestCustomExpansionExpression(c *C) {
 	testKeyValuePrePostfix(c, "*[", "]*", "key=value\nkey2=*[key]*", "key", "value", "key2", "value")
+}
+
+func (l *TestSuite) TestPanicOn32BitIntOverflow(c *C) {
+	is32Bit = true
+	var min, max int64 = math.MinInt32-1, math.MaxInt32+1
+	input := fmt.Sprintf("min=%d\nmax=%d", min, max)
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetInt64("min"), Equals, min)
+	c.Assert(p.MustGetInt64("max"), Equals, max)
+	c.Assert(func() { p.MustGetInt("min") }, PanicMatches, ".* out of range")
+	c.Assert(func() { p.MustGetInt("max") }, PanicMatches, ".* out of range")
+}
+
+func (l *TestSuite) TestPanicOn32BitUintOverflow(c *C) {
+	is32Bit = true
+	var max uint64 = math.MaxUint32+1
+	input := fmt.Sprintf("max=%d", max)
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetUint64("max"), Equals, max)
+	c.Assert(func() { p.MustGetUint("max") }, PanicMatches, ".* out of range")
 }
 
 // ----------------------------------------------------------------------------

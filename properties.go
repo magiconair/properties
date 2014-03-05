@@ -131,6 +131,29 @@ func (p *Properties) getFloat64(key string) (value float64, err error) {
 
 // ----------------------------------------------------------------------------
 
+// GetInt parses the expanded value as an int if the key exists.
+// If key does not exist or the value cannot be parsed the default
+// value is returned.
+func (p *Properties) GetInt(key string, def int) int {
+	v, err := p.getInt64(key)
+	if err != nil {
+		return def
+	}
+	return intRangeCheck(key, v)
+}
+
+// MustGetInt parses the expanded value as an int if the key exists.
+// If key does not exist or the value cannot be parsed the function panics.
+func (p *Properties) MustGetInt(key string) int {
+	v, err := p.getInt64(key)
+	if err != nil {
+		panic(err)
+	}
+	return intRangeCheck(key, v)
+}
+
+// ----------------------------------------------------------------------------
+
 // GetInt64 parses the expanded value as an int64 if the key exists.
 // If key does not exist or the value cannot be parsed the default
 // value is returned.
@@ -161,6 +184,29 @@ func (p *Properties) getInt64(key string) (value int64, err error) {
 		return value, nil
 	}
 	return 0, invalidKeyError(key)
+}
+
+// ----------------------------------------------------------------------------
+
+// GetUint parses the expanded value as an uint if the key exists.
+// If key does not exist or the value cannot be parsed the default
+// value is returned.
+func (p *Properties) GetUint(key string, def uint) uint {
+	v, err := p.getUint64(key)
+	if err != nil {
+		return def
+	}
+	return uintRangeCheck(key, v)
+}
+
+// MustGetUint parses the expanded value as an int if the key exists.
+// If key does not exist or the value cannot be parsed the function panics.
+func (p *Properties) MustGetUint(key string) uint {
+	v, err := p.getUint64(key)
+	if err != nil {
+		panic(err)
+	}
+	return uintRangeCheck(key, v)
 }
 
 // ----------------------------------------------------------------------------
