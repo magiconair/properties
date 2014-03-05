@@ -97,19 +97,19 @@ var complexTests = [][]string{
 // {"input", "expected error message"}
 var errorTests = [][]string{
 	// unicode literals
-	// {"key\\u1 = value", "Invalid unicode literal"},
-	// {"key\\u12 = value", "Invalid unicode literal"},
-	// {"key\\u123 = value", "Invalid unicode literal"},
-	// {"key\\u123g = value", "Invalid unicode literal"},
-	// {"key\\u123", "Invalid unicode literal"},
+	{"key\\u1 = value", "Invalid unicode literal"},
+	{"key\\u12 = value", "Invalid unicode literal"},
+	{"key\\u123 = value", "Invalid unicode literal"},
+	{"key\\u123g = value", "Invalid unicode literal"},
+	{"key\\u123", "Invalid unicode literal"},
 
 	// circular references
-	// {"key=${key}", "Circular reference"},
-	// {"key1=${key2}\nkey2=${key1}", "Circular reference"},
+	{"key=${key}", "Circular reference"},
+	{"key1=${key2}\nkey2=${key1}", "Circular reference"},
 
 	// malformed expressions
 	{"key=${ke", "Malformed expression"},
-	// {"key=valu${ke", "Malformed expression"},
+	{"key=valu${ke", "Malformed expression"},
 }
 
 // define write encoding test cases in the form of
