@@ -27,6 +27,11 @@ See [![GoDoc](https://godoc.org/github.com/magiconair/properties?status.png)](ht
 History
 -------
 
+v1.2.0, 05 Mar 2014
+-------------------
+* Added MustGet... functions
+* Added support for int and uint with range checks on 32 bit platforms
+
 v1.1.0, 20 Jan 2014
 -------------------
 * Renamed from goproperties to properties
@@ -46,8 +51,6 @@ License
 
 ToDo
 ----
-* Add MustGet ... functions
-* Add support for int and uint
-* Dump contents to stdout with passwords and secrets obscured
+* Dump contents with passwords and secrets obscured
 * panic on non-existent key
 * log non-existent key
