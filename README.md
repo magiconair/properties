@@ -5,24 +5,35 @@ properties is a Go library for reading and writing properties files.
 
 It supports reading from multiple files and Spring style recursive property
 expansion of expressions like `${key}` to their corresponding value.
-
 Value expressions can refer to other keys like in `${key}` or to
 environment variables like in `${USER}`.
-
 Filenames can also contain environment variables like in
 `/home/${USER}/myapp.properties`.
 
 The properties library supports both ISO-8859-1 and UTF-8 encoded data.
 
-Install
--------
+Getting Started
+---------------
 
-	$ go get github.com/magiconair/properties
+```go
+import "github.com/magiconair/properties"
 
-Documentation
--------------
+func main() {
+	p := properties.MustLoadFile("${HOME}/config.properties", properties.UTF8)
+	host := p.MustGetString("host")
+	port := p.GetInt("port", 8080)
+}
 
-See [![GoDoc](https://godoc.org/github.com/magiconair/properties?status.png)](https://godoc.org/github.com/magiconair/properties)
+```
+
+Read the full documentation on [GoDoc](https://godoc.org/github.com/magiconair/properties)   [![GoDoc](https://godoc.org/github.com/magiconair/properties?status.png)](https://godoc.org/github.com/magiconair/properties)
+
+Installation and Upgrade
+------------------------
+
+```
+$ go get -u github.com/magiconair/properties
+```
 
 History
 -------
