@@ -1,0 +1,5 @@
+language: go
+go:
+    - release
+install: go get launchpad.net/gocheck
+
