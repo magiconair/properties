@@ -1,16 +1,16 @@
-Overview
+Overview [![Build Status](https://travis-ci.org/magiconair/properties.png?branch=master)](https://travis-ci.org/magiconair/properties)
 ========
 
 properties is a Go library for reading and writing properties files.
 
 It supports reading from multiple files and Spring style recursive property
-expansion of expressions like '${key}' to their corresponding value.
+expansion of expressions like `${key}` to their corresponding value.
 
-Value expressions can refer to other keys like in '${key}' or to
-environment variables like in '${USER}'.
+Value expressions can refer to other keys like in `${key}` or to
+environment variables like in `${USER}`.
 
 Filenames can also contain environment variables like in
-'/home/${USER}/myapp.properties'.
+`/home/${USER}/myapp.properties`.
 
 The properties library supports both ISO-8859-1 and UTF-8 encoded data.
 
