@@ -480,5 +480,5 @@ func escape(r rune, special string) string {
 }
 
 func invalidKeyError(key string) error {
-	return fmt.Errorf("invalid key: %s", key)
+	return fmt.Errorf("unknown property: %s", key)
 }

@@ -311,7 +311,7 @@ func (l *TestSuite) TestMustGet(c *C) {
 	p, err := parse(input)
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGet("key"), Equals, "value")
-	c.Assert(func() { p.MustGet("invalid") }, PanicMatches, "invalid key: invalid")
+	c.Assert(func() { p.MustGet("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
 func (l *TestSuite) TestGetBool(c *C) {
@@ -328,7 +328,7 @@ func (l *TestSuite) TestMustGetBool(c *C) {
 	p, err := parse(input)
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetBool("key"), Equals, true)
-	c.Assert(func() { p.MustGetBool("invalid") }, PanicMatches, "invalid key: invalid")
+	c.Assert(func() { p.MustGetBool("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
 func (l *TestSuite) TestGetDuration(c *C) {
@@ -346,7 +346,7 @@ func (l *TestSuite) TestMustGetDuration(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetDuration("key"), Equals, time.Duration(123))
 	c.Assert(func() { p.MustGetDuration("key2") }, PanicMatches, "strconv.ParseInt: parsing.*")
-	c.Assert(func() { p.MustGetDuration("invalid") }, PanicMatches, "invalid key: invalid")
+	c.Assert(func() { p.MustGetDuration("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
 func (l *TestSuite) TestGetFloat64(c *C) {
@@ -364,7 +364,7 @@ func (l *TestSuite) TestMustGetFloat64(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetFloat64("key"), Equals, float64(123))
 	c.Assert(func() { p.MustGetFloat64("key2") }, PanicMatches, "strconv.ParseFloat: parsing.*")
-	c.Assert(func() { p.MustGetFloat64("invalid") }, PanicMatches, "invalid key: invalid")
+	c.Assert(func() { p.MustGetFloat64("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
 func (l *TestSuite) TestGetInt(c *C) {
@@ -382,7 +382,7 @@ func (l *TestSuite) TestMustGetInt(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetInt("key"), Equals, int(123))
 	c.Assert(func() { p.MustGetInt("key2") }, PanicMatches, "strconv.ParseInt: parsing.*")
-	c.Assert(func() { p.MustGetInt("invalid") }, PanicMatches, "invalid key: invalid")
+	c.Assert(func() { p.MustGetInt("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
 func (l *TestSuite) TestGetInt64(c *C) {
@@ -400,7 +400,7 @@ func (l *TestSuite) TestMustGetInt64(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetInt64("key"), Equals, int64(123))
 	c.Assert(func() { p.MustGetInt64("key2") }, PanicMatches, "strconv.ParseInt: parsing.*")
-	c.Assert(func() { p.MustGetInt64("invalid") }, PanicMatches, "invalid key: invalid")
+	c.Assert(func() { p.MustGetInt64("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
 func (l *TestSuite) TestGetUint(c *C) {
@@ -418,7 +418,7 @@ func (l *TestSuite) TestMustGetUint(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetUint("key"), Equals, uint(123))
 	c.Assert(func() { p.MustGetUint64("key2") }, PanicMatches, "strconv.ParseUint: parsing.*")
-	c.Assert(func() { p.MustGetUint64("invalid") }, PanicMatches, "invalid key: invalid")
+	c.Assert(func() { p.MustGetUint64("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
 func (l *TestSuite) TestGetUint64(c *C) {
@@ -436,7 +436,7 @@ func (l *TestSuite) TestMustGetUint64(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetUint64("key"), Equals, uint64(123))
 	c.Assert(func() { p.MustGetUint64("key2") }, PanicMatches, "strconv.ParseUint: parsing.*")
-	c.Assert(func() { p.MustGetUint64("invalid") }, PanicMatches, "invalid key: invalid")
+	c.Assert(func() { p.MustGetUint64("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
 func (l *TestSuite) TestGetString(c *C) {
@@ -453,7 +453,7 @@ func (l *TestSuite) TestMustGetString(c *C) {
 	p, err := parse(input)
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetString("key"), Equals, "value")
-	c.Assert(func() { p.MustGetString("invalid") }, PanicMatches, "invalid key: invalid")
+	c.Assert(func() { p.MustGetString("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
 func (l *TestSuite) TestWrite(c *C) {
