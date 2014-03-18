@@ -1,4 +1,4 @@
-// Copyright 2013 Frank Schroeder. All rights reserved.
+// Copyright 2013-2014 Frank Schroeder. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -20,4 +20,3 @@ func BenchmarkLoad(b *testing.B) {
 		Load([]byte(input), ISO_8859_1)
 	}
 }
-
