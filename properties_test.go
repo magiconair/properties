@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	. "launchpad.net/gocheck"
 )
@@ -160,6 +161,29 @@ var boolTests = []*boolTest{
 
 // ----------------------------------------------------------------------------
 
+type durationTest struct {
+	input, key string
+	def, value time.Duration
+}
+
+var durationTests = []*durationTest{
+	// valid values
+	&durationTest{"key = 1", "key", 999, 1},
+	&durationTest{"key = 0", "key", 999, 0},
+	&durationTest{"key = -1", "key", 999, -1},
+	&durationTest{"key = 0123", "key", 999, 123},
+
+	// invalid values
+	&durationTest{"key = 0xff", "key", 999, 999},
+	&durationTest{"key = 1.0", "key", 999, 999},
+	&durationTest{"key = a", "key", 999, 999},
+
+	// non existent key
+	&durationTest{"key = 1", "key2", 999, 999},
+}
+
+// ----------------------------------------------------------------------------
+
 type floatTest struct {
 	input, key string
 	def, value float64
@@ -290,6 +314,24 @@ func (l *TestSuite) TestMustGetBool(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetBool("key"), Equals, true)
 	c.Assert(func() { p.MustGetBool("invalid") }, PanicMatches, "invalid key: invalid")
+}
+
+func (l *TestSuite) TestGetDuration(c *C) {
+	for _, test := range durationTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.Len(), Equals, 1)
+		c.Assert(p.GetDuration(test.key, test.def), Equals, test.value)
+	}
+}
+
+func (l *TestSuite) TestMustGetDuration(c *C) {
+	input := "key = 123\nkey2 = ghi"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetDuration("key"), Equals, time.Duration(123))
+	c.Assert(func() { p.MustGetDuration("key2") }, PanicMatches, "strconv.ParseInt: parsing.*")
+	c.Assert(func() { p.MustGetDuration("invalid") }, PanicMatches, "invalid key: invalid")
 }
 
 func (l *TestSuite) TestGetFloat64(c *C) {
@@ -425,7 +467,7 @@ func (l *TestSuite) TestCustomExpansionExpression(c *C) {
 
 func (l *TestSuite) TestPanicOn32BitIntOverflow(c *C) {
 	is32Bit = true
-	var min, max int64 = math.MinInt32-1, math.MaxInt32+1
+	var min, max int64 = math.MinInt32 - 1, math.MaxInt32 + 1
 	input := fmt.Sprintf("min=%d\nmax=%d", min, max)
 	p, err := parse(input)
 	c.Assert(err, IsNil)
@@ -437,7 +479,7 @@ func (l *TestSuite) TestPanicOn32BitIntOverflow(c *C) {
 
 func (l *TestSuite) TestPanicOn32BitUintOverflow(c *C) {
 	is32Bit = true
-	var max uint64 = math.MaxUint32+1
+	var max uint64 = math.MaxUint32 + 1
 	input := fmt.Sprintf("max=%d", max)
 	p, err := parse(input)
 	c.Assert(err, IsNil)

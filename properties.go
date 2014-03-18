@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -93,6 +94,29 @@ func (p *Properties) getBool(key string) (value bool, err error) {
 		return v == "1" || v == "true" || v == "yes" || v == "on", nil
 	}
 	return false, invalidKeyError(key)
+}
+
+// ----------------------------------------------------------------------------
+
+// GetDuration parses the expanded value as an time.Duration if the key exists.
+// If key does not exist or the value cannot be parsed the default
+// value is returned.
+func (p *Properties) GetDuration(key string, def time.Duration) time.Duration {
+	v, err := p.getInt64(key)
+	if err != nil {
+		return def
+	}
+	return time.Duration(v)
+}
+
+// MustGetDuration parses the expanded value as an time.Duration if the key exists.
+// If key does not exist or the value cannot be parsed the function panics.
+func (p *Properties) MustGetDuration(key string) time.Duration {
+	v, err := p.getInt64(key)
+	if err != nil {
+		panic(err)
+	}
+	return time.Duration(v)
 }
 
 // ----------------------------------------------------------------------------
