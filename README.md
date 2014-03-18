@@ -10,6 +10,11 @@ environment variables like in `${USER}`.
 Filenames can also contain environment variables like in
 `/home/${USER}/myapp.properties`.
 
+Starting from version 1.3.0 the behavior of the MustXXX() functions is
+configurable by providing a custom ErrorHandler function. The default has
+changed from panic to log.Fatal but this is configurable and custom
+error handling functions can be provided.
+
 The properties library supports both ISO-8859-1 and UTF-8 encoded data.
 
 Getting Started
@@ -37,6 +42,12 @@ $ go get -u github.com/magiconair/properties
 
 History
 -------
+
+v1.3.0, 18 Mar 2014
+-------------------
+* Added support for time.Duration
+* Made MustXXX() failure behavior configurable (log.Fatal, panic, custom)
+* Changed default of MustXXX() failure from panic to log.Fatal
 
 v1.2.0, 05 Mar 2014
 -------------------

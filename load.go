@@ -54,7 +54,7 @@ func loadBuf(buf []byte, enc Encoding) (*Properties, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return p, p.check()
 }
 
@@ -87,7 +87,7 @@ func loadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Propertie
 func mustLoadFiles(filenames []string, enc Encoding, ignoreMissing bool) *Properties {
 	p, err := loadFiles(filenames, enc, ignoreMissing)
 	if err != nil {
-		panic(err)
+		ErrorHandler(err)
 	}
 	return p
 }
@@ -114,6 +114,7 @@ func convert(buf []byte, enc Encoding) string {
 		}
 		return string(runes)
 	default:
-		panic(fmt.Sprintf("Unsupported encoding %v", enc))
+		ErrorHandler(fmt.Errorf("Unsupported encoding %v", enc))
 	}
+	panic("ErrorHandler should exit")
 }

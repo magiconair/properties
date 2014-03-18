@@ -10,12 +10,34 @@ package properties
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
 )
+
+// ErrorHandlerFunc defines the type of function which handles failures
+// of the MustXXX() functions. An error handler function must exit
+// the application after handling the error.
+type ErrorHandlerFunc func(error)
+
+// ErrorHandler is the function which handles failures of the MustXXX()
+// functions. The default is LogFatalHandler.
+var ErrorHandler ErrorHandlerFunc = LogFatalHandler
+
+// LogFatalHandler handles the error by logging a fatal error and exiting.
+func LogFatalHandler(err error) {
+	log.Fatal(err)
+}
+
+// PanicHandler handles the error by panicking.
+func PanicHandler(err error) {
+	panic(err)
+}
+
+// -----------------------------------------------------------------------------
 
 type Properties struct {
 	// Pre-/Postfix for property expansion.
@@ -49,7 +71,7 @@ func (p *Properties) Get(key string) (value string, ok bool) {
 	// circular references and malformed expressions
 	// so we panic if we still get an error here.
 	if err != nil {
-		panic(fmt.Errorf("%s in %q", err, key+" = "+v))
+		ErrorHandler(fmt.Errorf("%s in %q", err, key+" = "+v))
 	}
 
 	return expanded, true
@@ -61,7 +83,8 @@ func (p *Properties) MustGet(key string) string {
 	if v, ok := p.Get(key); ok {
 		return v
 	}
-	panic(invalidKeyError(key))
+	ErrorHandler(invalidKeyError(key))
+	panic("ErrorHandler should exit")
 }
 
 // ----------------------------------------------------------------------------
@@ -83,7 +106,7 @@ func (p *Properties) GetBool(key string, def bool) bool {
 func (p *Properties) MustGetBool(key string) bool {
 	v, err := p.getBool(key)
 	if err != nil {
-		panic(err)
+		ErrorHandler(err)
 	}
 	return v
 }
@@ -114,7 +137,7 @@ func (p *Properties) GetDuration(key string, def time.Duration) time.Duration {
 func (p *Properties) MustGetDuration(key string) time.Duration {
 	v, err := p.getInt64(key)
 	if err != nil {
-		panic(err)
+		ErrorHandler(err)
 	}
 	return time.Duration(v)
 }
@@ -137,7 +160,7 @@ func (p *Properties) GetFloat64(key string, def float64) float64 {
 func (p *Properties) MustGetFloat64(key string) float64 {
 	v, err := p.getFloat64(key)
 	if err != nil {
-		panic(err)
+		ErrorHandler(err)
 	}
 	return v
 }
@@ -174,7 +197,7 @@ func (p *Properties) GetInt(key string, def int) int {
 func (p *Properties) MustGetInt(key string) int {
 	v, err := p.getInt64(key)
 	if err != nil {
-		panic(err)
+		ErrorHandler(err)
 	}
 	return intRangeCheck(key, v)
 }
@@ -197,7 +220,7 @@ func (p *Properties) GetInt64(key string, def int64) int64 {
 func (p *Properties) MustGetInt64(key string) int64 {
 	v, err := p.getInt64(key)
 	if err != nil {
-		panic(err)
+		ErrorHandler(err)
 	}
 	return v
 }
@@ -234,7 +257,7 @@ func (p *Properties) GetUint(key string, def uint) uint {
 func (p *Properties) MustGetUint(key string) uint {
 	v, err := p.getUint64(key)
 	if err != nil {
-		panic(err)
+		ErrorHandler(err)
 	}
 	return uintRangeCheck(key, v)
 }
@@ -257,7 +280,7 @@ func (p *Properties) GetUint64(key string, def uint64) uint64 {
 func (p *Properties) MustGetUint64(key string) uint64 {
 	v, err := p.getUint64(key)
 	if err != nil {
-		panic(err)
+		ErrorHandler(err)
 	}
 	return v
 }
@@ -290,7 +313,8 @@ func (p *Properties) MustGetString(key string) string {
 	if v, ok := p.Get(key); ok {
 		return v
 	}
-	panic(invalidKeyError(key))
+	ErrorHandler(invalidKeyError(key))
+	panic("ErrorHandler should exit")
 }
 
 // ----------------------------------------------------------------------------

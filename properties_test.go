@@ -19,12 +19,27 @@ import (
 
 func Test(t *testing.T) { TestingT(t) }
 
-type TestSuite struct{}
+type TestSuite struct {
+	prevHandler ErrorHandlerFunc
+}
 
 var (
 	_       = Suite(&TestSuite{})
 	verbose = flag.Bool("verbose", false, "Verbose output")
 )
+
+// --------------------------------------------------------------------
+
+func (s *TestSuite) SetUpSuite(c *C) {
+	s.prevHandler = ErrorHandler
+	ErrorHandler = PanicHandler
+}
+
+// --------------------------------------------------------------------
+
+func (s *TestSuite) TearDownSuite(c *C) {
+	ErrorHandler = s.prevHandler
+}
 
 // ----------------------------------------------------------------------------
 

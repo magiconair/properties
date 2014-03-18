@@ -92,6 +92,30 @@
 //   v = p.GetUint64("key", 999)
 //   v = p.GetFloat64("key", 123.0)
 //   v = p.GetString("key", "def")
+//   v = p.GetDuration("key", 999)
+//
+// Properties provides several MustXXX() convenience functions
+// which will terminate the app if an error occurs. The behavior
+// of the failure is configurable and the default is to call
+// log.Fatal(err). To have the MustXXX() functions panic instead
+// of logging the error set a different ErrorHandler before
+// you use the Properties package.
+//
+//   properties.ErrorHandler = properties.PanicHandler
+//
+//   # Will panic instead of logging an error
+//   p := properties.MustLoadFile("config.properties")
+//
+// You can also provide your own ErrorHandler function. The only requirement
+// is that the error handler function must exit after handling the error.
+//
+//   properties.ErrorHandler = func(err error) {
+//	     fmt.Println(err)
+//       os.Exit(1)
+//   }
+//
+//   # Will write to stdout and then exit
+//   p := properties.MustLoadFile("config.properties")
 //
 // The following documents provide a description of the properties
 // file format.
