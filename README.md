@@ -75,5 +75,3 @@ License
 ToDo
 ----
 * Dump contents with passwords and secrets obscured
-* panic on non-existent key
-* log non-existent key
