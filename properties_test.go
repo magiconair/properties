@@ -285,6 +285,20 @@ var stringTests = []*stringTest{
 
 // ----------------------------------------------------------------------------
 
+type keysTest struct {
+	input string
+	keys  []string
+}
+
+var keysTests = []*keysTest{
+	&keysTest{"", []string{}},
+	&keysTest{"key = abc", []string{"key"}},
+	&keysTest{"key = abc\nkey2=def", []string{"key", "key2"}},
+	&keysTest{"key = abc\nkey=def", []string{"key"}},
+}
+
+// ----------------------------------------------------------------------------
+
 // TestBasic tests basic single key/value combinations with all possible
 // whitespace, delimiter and newline permutations.
 func (l *TestSuite) TestBasic(c *C) {
@@ -456,6 +470,17 @@ func (l *TestSuite) TestMustGetString(c *C) {
 	c.Assert(func() { p.MustGetString("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
+func (l *TestSuite) TestKeys(c *C) {
+	for _, test := range keysTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.Len(), Equals, len(test.keys))
+		for _, key := range test.keys {
+			_, ok := p.Get(key)
+			c.Assert(ok, Equals, true)
+		}
+	}
+}
 func (l *TestSuite) TestWrite(c *C) {
 	for _, test := range writeTests {
 		input, output, enc := test[0], test[1], test[2]

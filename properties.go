@@ -324,6 +324,15 @@ func (p *Properties) Len() int {
 	return len(p.m)
 }
 
+// Keys returns all keys.
+func (p *Properties) Keys() []string {
+	keys := make([]string, len(p.m))
+	for k, _ := range p.m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // Set sets the property key to the corresponding value.
 // If a value for key existed before then ok is true and prev
 // contains the previous value. If the value contains a
