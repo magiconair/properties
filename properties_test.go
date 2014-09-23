@@ -299,6 +299,53 @@ var keysTests = []*keysTest{
 
 // ----------------------------------------------------------------------------
 
+type filterTest struct {
+	input   string
+	pattern string
+	keys    []string
+	err     string
+}
+
+var filterTests = []*filterTest{
+	&filterTest{"", "", []string{}, ""},
+	&filterTest{"", "abc", []string{}, ""},
+	&filterTest{"key=value", "", []string{"key"}, ""},
+	&filterTest{"key=value", "key=", []string{}, ""},
+	&filterTest{"key=value\nfoo=bar", "", []string{"foo", "key"}, ""},
+	&filterTest{"key=value\nfoo=bar", "f", []string{"foo"}, ""},
+	&filterTest{"key=value\nfoo=bar", "fo", []string{"foo"}, ""},
+	&filterTest{"key=value\nfoo=bar", "foo", []string{"foo"}, ""},
+	&filterTest{"key=value\nfoo=bar", "fooo", []string{}, ""},
+	&filterTest{"key=value\nkey2=value2\nfoo=bar", "ey", []string{"key", "key2"}, ""},
+	&filterTest{"key=value\nkey2=value2\nfoo=bar", "key", []string{"key", "key2"}, ""},
+	&filterTest{"key=value\nkey2=value2\nfoo=bar", "^key", []string{"key", "key2"}, ""},
+	&filterTest{"key=value\nkey2=value2\nfoo=bar", "^(key|foo)", []string{"foo", "key", "key2"}, ""},
+	&filterTest{"key=value\nkey2=value2\nfoo=bar", "[ abc", nil, "error parsing regexp.*"},
+}
+
+// ----------------------------------------------------------------------------
+
+type filterPrefixTest struct {
+	input  string
+	prefix string
+	keys   []string
+}
+
+var filterPrefixTests = []*filterPrefixTest{
+	&filterPrefixTest{"", "", []string{}},
+	&filterPrefixTest{"", "abc", []string{}},
+	&filterPrefixTest{"key=value", "", []string{"key"}},
+	&filterPrefixTest{"key=value", "key=", []string{}},
+	&filterPrefixTest{"key=value\nfoo=bar", "", []string{"foo", "key"}},
+	&filterPrefixTest{"key=value\nfoo=bar", "f", []string{"foo"}},
+	&filterPrefixTest{"key=value\nfoo=bar", "fo", []string{"foo"}},
+	&filterPrefixTest{"key=value\nfoo=bar", "foo", []string{"foo"}},
+	&filterPrefixTest{"key=value\nfoo=bar", "fooo", []string{}},
+	&filterPrefixTest{"key=value\nkey2=value2\nfoo=bar", "key", []string{"key", "key2"}},
+}
+
+// ----------------------------------------------------------------------------
+
 // TestBasic tests basic single key/value combinations with all possible
 // whitespace, delimiter and newline permutations.
 func (l *TestSuite) TestBasic(c *C) {
@@ -468,6 +515,44 @@ func (l *TestSuite) TestMustGetString(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetString("key"), Equals, "value")
 	c.Assert(func() { p.MustGetString("invalid") }, PanicMatches, "unknown property: invalid")
+}
+
+func (l *TestSuite) TestFilter(c *C) {
+	for _, test := range filterTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		pp, err := p.Filter(test.pattern)
+		if err != nil {
+			c.Assert(err, ErrorMatches, test.err)
+			continue
+		}
+		c.Assert(pp, NotNil)
+		c.Assert(pp.Len(), Equals, len(test.keys))
+		for _, key := range test.keys {
+			v1, ok1 := p.Get(key)
+			v2, ok2 := pp.Get(key)
+			c.Assert(ok1, Equals, true)
+			c.Assert(ok2, Equals, true)
+			c.Assert(v1, Equals, v2)
+		}
+	}
+}
+
+func (l *TestSuite) TestFilterPrefix(c *C) {
+	for _, test := range filterPrefixTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		pp := p.FilterPrefix(test.prefix)
+		c.Assert(pp, NotNil)
+		c.Assert(pp.Len(), Equals, len(test.keys))
+		for _, key := range test.keys {
+			v1, ok1 := p.Get(key)
+			v2, ok2 := pp.Get(key)
+			c.Assert(ok1, Equals, true)
+			c.Assert(ok2, Equals, true)
+			c.Assert(v1, Equals, v2)
+		}
+	}
 }
 
 func (l *TestSuite) TestKeys(c *C) {

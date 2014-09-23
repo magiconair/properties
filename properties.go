@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -318,6 +319,41 @@ func (p *Properties) MustGetString(key string) string {
 }
 
 // ----------------------------------------------------------------------------
+
+// Filter returns a new properties object which contains all properties
+// for which the key matches the pattern.
+func (p *Properties) Filter(pattern string) (*Properties, error) {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	return p.FilterRegexp(re), nil
+}
+
+// FilterRegexp returns a new properties object which contains all properties
+// for which the key matches the regular expression.
+func (p *Properties) FilterRegexp(re *regexp.Regexp) *Properties {
+	pp := NewProperties()
+	for k, v := range p.m {
+		if re.MatchString(k) {
+			pp.Set(k, v)
+		}
+	}
+	return pp
+}
+
+// FilterPrefix returns a new properties object which contains all properties
+// for which the key starts with the prefix.
+func (p *Properties) FilterPrefix(prefix string) *Properties {
+	pp := NewProperties()
+	for k, v := range p.m {
+		if strings.HasPrefix(k, prefix) {
+			pp.Set(k, v)
+		}
+	}
+	return pp
+}
 
 // Len returns the number of keys.
 func (p *Properties) Len() int {
