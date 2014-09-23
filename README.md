@@ -44,6 +44,11 @@ $ go get -u github.com/magiconair/properties
 History
 -------
 
+v1.4.0, 23 Sep 2014
+-------------------
+ * Added Keys() to get the keys
+ * Added Filter(), FilterRegexp() and FilterPrefix() to get a subset of the properties
+
 v1.3.0, 18 Mar 2014
 -------------------
 * Added support for time.Duration
