@@ -362,7 +362,7 @@ func (p *Properties) Len() int {
 
 // Keys returns all keys.
 func (p *Properties) Keys() []string {
-	keys := make([]string, len(p.m))
+	keys := make([]string, 0, len(p.m))
 	for k, _ := range p.m {
 		keys = append(keys, k)
 	}

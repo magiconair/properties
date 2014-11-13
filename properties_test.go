@@ -560,6 +560,7 @@ func (l *TestSuite) TestKeys(c *C) {
 		p, err := parse(test.input)
 		c.Assert(err, IsNil)
 		c.Assert(p.Len(), Equals, len(test.keys))
+		c.Assert(len(p.Keys()), Equals, len(test.keys))
 		for _, key := range test.keys {
 			_, ok := p.Get(key)
 			c.Assert(ok, Equals, true)

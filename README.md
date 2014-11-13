@@ -44,6 +44,10 @@ $ go get -u github.com/magiconair/properties
 History
 -------
 
+v1.4.1, 13 Nov 2014
+-------------------
+ * (Issue #1) Fixed bug in Keys() method which returned an empty string
+
 v1.4.0, 23 Sep 2014
 -------------------
  * Added Keys() to get the keys
