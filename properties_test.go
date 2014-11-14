@@ -111,7 +111,9 @@ var complexTests = [][]string{
 
 // define error test cases in the form of
 // {"input", "expected error message"}
-var errorTests = [][]string{
+var errorTests = []struct {
+	input, msg string
+}{
 	// unicode literals
 	{"key\\u1 = value", "Invalid unicode literal"},
 	{"key\\u12 = value", "Invalid unicode literal"},
@@ -130,7 +132,9 @@ var errorTests = [][]string{
 
 // define write encoding test cases in the form of
 // {"input", "expected output after write", ["UTF-8", "ISO-8859-1"]}
-var writeTests = [][]string{
+var writeTests = []struct {
+	input, output, encoding string
+}{
 	// ISO-8859-1 tests
 	{"key = value", "key = value\n", "ISO-8859-1"},
 	{"key = value \\\n   continued", "key = value continued\n", "ISO-8859-1"},
@@ -146,202 +150,184 @@ var writeTests = [][]string{
 
 // ----------------------------------------------------------------------------
 
-type boolTest struct {
+var boolTests = []struct {
 	input, key string
 	def, value bool
-}
-
-var boolTests = []*boolTest{
+}{
 	// valid values for TRUE
-	&boolTest{"key = 1", "key", false, true},
-	&boolTest{"key = on", "key", false, true},
-	&boolTest{"key = On", "key", false, true},
-	&boolTest{"key = ON", "key", false, true},
-	&boolTest{"key = true", "key", false, true},
-	&boolTest{"key = True", "key", false, true},
-	&boolTest{"key = TRUE", "key", false, true},
-	&boolTest{"key = yes", "key", false, true},
-	&boolTest{"key = Yes", "key", false, true},
-	&boolTest{"key = YES", "key", false, true},
+	{"key = 1", "key", false, true},
+	{"key = on", "key", false, true},
+	{"key = On", "key", false, true},
+	{"key = ON", "key", false, true},
+	{"key = true", "key", false, true},
+	{"key = True", "key", false, true},
+	{"key = TRUE", "key", false, true},
+	{"key = yes", "key", false, true},
+	{"key = Yes", "key", false, true},
+	{"key = YES", "key", false, true},
 
 	// valid values for FALSE (all other)
-	&boolTest{"key = 0", "key", true, false},
-	&boolTest{"key = off", "key", true, false},
-	&boolTest{"key = false", "key", true, false},
-	&boolTest{"key = no", "key", true, false},
+	{"key = 0", "key", true, false},
+	{"key = off", "key", true, false},
+	{"key = false", "key", true, false},
+	{"key = no", "key", true, false},
 
 	// non existent key
-	&boolTest{"key = true", "key2", false, false},
+	{"key = true", "key2", false, false},
 }
 
 // ----------------------------------------------------------------------------
 
-type durationTest struct {
+var durationTests = []struct {
 	input, key string
 	def, value time.Duration
-}
-
-var durationTests = []*durationTest{
+}{
 	// valid values
-	&durationTest{"key = 1", "key", 999, 1},
-	&durationTest{"key = 0", "key", 999, 0},
-	&durationTest{"key = -1", "key", 999, -1},
-	&durationTest{"key = 0123", "key", 999, 123},
+	{"key = 1", "key", 999, 1},
+	{"key = 0", "key", 999, 0},
+	{"key = -1", "key", 999, -1},
+	{"key = 0123", "key", 999, 123},
 
 	// invalid values
-	&durationTest{"key = 0xff", "key", 999, 999},
-	&durationTest{"key = 1.0", "key", 999, 999},
-	&durationTest{"key = a", "key", 999, 999},
+	{"key = 0xff", "key", 999, 999},
+	{"key = 1.0", "key", 999, 999},
+	{"key = a", "key", 999, 999},
 
 	// non existent key
-	&durationTest{"key = 1", "key2", 999, 999},
+	{"key = 1", "key2", 999, 999},
 }
 
 // ----------------------------------------------------------------------------
 
-type floatTest struct {
+var floatTests = []struct {
 	input, key string
 	def, value float64
-}
-
-var floatTests = []*floatTest{
+}{
 	// valid values
-	&floatTest{"key = 1.0", "key", 999, 1.0},
-	&floatTest{"key = 0.0", "key", 999, 0.0},
-	&floatTest{"key = -1.0", "key", 999, -1.0},
-	&floatTest{"key = 1", "key", 999, 1},
-	&floatTest{"key = 0", "key", 999, 0},
-	&floatTest{"key = -1", "key", 999, -1},
-	&floatTest{"key = 0123", "key", 999, 123},
+	{"key = 1.0", "key", 999, 1.0},
+	{"key = 0.0", "key", 999, 0.0},
+	{"key = -1.0", "key", 999, -1.0},
+	{"key = 1", "key", 999, 1},
+	{"key = 0", "key", 999, 0},
+	{"key = -1", "key", 999, -1},
+	{"key = 0123", "key", 999, 123},
 
 	// invalid values
-	&floatTest{"key = 0xff", "key", 999, 999},
-	&floatTest{"key = a", "key", 999, 999},
+	{"key = 0xff", "key", 999, 999},
+	{"key = a", "key", 999, 999},
 
 	// non existent key
-	&floatTest{"key = 1", "key2", 999, 999},
+	{"key = 1", "key2", 999, 999},
 }
 
 // ----------------------------------------------------------------------------
 
-type int64Test struct {
+var int64Tests = []struct {
 	input, key string
 	def, value int64
-}
-
-var int64Tests = []*int64Test{
+}{
 	// valid values
-	&int64Test{"key = 1", "key", 999, 1},
-	&int64Test{"key = 0", "key", 999, 0},
-	&int64Test{"key = -1", "key", 999, -1},
-	&int64Test{"key = 0123", "key", 999, 123},
+	{"key = 1", "key", 999, 1},
+	{"key = 0", "key", 999, 0},
+	{"key = -1", "key", 999, -1},
+	{"key = 0123", "key", 999, 123},
 
 	// invalid values
-	&int64Test{"key = 0xff", "key", 999, 999},
-	&int64Test{"key = 1.0", "key", 999, 999},
-	&int64Test{"key = a", "key", 999, 999},
+	{"key = 0xff", "key", 999, 999},
+	{"key = 1.0", "key", 999, 999},
+	{"key = a", "key", 999, 999},
 
 	// non existent key
-	&int64Test{"key = 1", "key2", 999, 999},
+	{"key = 1", "key2", 999, 999},
 }
 
 // ----------------------------------------------------------------------------
 
-type uint64Test struct {
+var uint64Tests = []struct {
 	input, key string
 	def, value uint64
-}
-
-var uint64Tests = []*uint64Test{
+}{
 	// valid values
-	&uint64Test{"key = 1", "key", 999, 1},
-	&uint64Test{"key = 0", "key", 999, 0},
-	&uint64Test{"key = 0123", "key", 999, 123},
+	{"key = 1", "key", 999, 1},
+	{"key = 0", "key", 999, 0},
+	{"key = 0123", "key", 999, 123},
 
 	// invalid values
-	&uint64Test{"key = -1", "key", 999, 999},
-	&uint64Test{"key = 0xff", "key", 999, 999},
-	&uint64Test{"key = 1.0", "key", 999, 999},
-	&uint64Test{"key = a", "key", 999, 999},
+	{"key = -1", "key", 999, 999},
+	{"key = 0xff", "key", 999, 999},
+	{"key = 1.0", "key", 999, 999},
+	{"key = a", "key", 999, 999},
 
 	// non existent key
-	&uint64Test{"key = 1", "key2", 999, 999},
+	{"key = 1", "key2", 999, 999},
 }
 
 // ----------------------------------------------------------------------------
 
-type stringTest struct {
+var stringTests = []struct {
 	input, key string
 	def, value string
-}
-
-var stringTests = []*stringTest{
+}{
 	// valid values
-	&stringTest{"key = abc", "key", "def", "abc"},
+	{"key = abc", "key", "def", "abc"},
 
 	// non existent key
-	&stringTest{"key = abc", "key2", "def", "def"},
+	{"key = abc", "key2", "def", "def"},
 }
 
 // ----------------------------------------------------------------------------
 
-type keysTest struct {
+var keysTests = []struct {
 	input string
 	keys  []string
-}
-
-var keysTests = []*keysTest{
-	&keysTest{"", []string{}},
-	&keysTest{"key = abc", []string{"key"}},
-	&keysTest{"key = abc\nkey2=def", []string{"key", "key2"}},
-	&keysTest{"key = abc\nkey=def", []string{"key"}},
+}{
+	{"", []string{}},
+	{"key = abc", []string{"key"}},
+	{"key = abc\nkey2=def", []string{"key", "key2"}},
+	{"key = abc\nkey=def", []string{"key"}},
 }
 
 // ----------------------------------------------------------------------------
 
-type filterTest struct {
+var filterTests = []struct {
 	input   string
 	pattern string
 	keys    []string
 	err     string
-}
-
-var filterTests = []*filterTest{
-	&filterTest{"", "", []string{}, ""},
-	&filterTest{"", "abc", []string{}, ""},
-	&filterTest{"key=value", "", []string{"key"}, ""},
-	&filterTest{"key=value", "key=", []string{}, ""},
-	&filterTest{"key=value\nfoo=bar", "", []string{"foo", "key"}, ""},
-	&filterTest{"key=value\nfoo=bar", "f", []string{"foo"}, ""},
-	&filterTest{"key=value\nfoo=bar", "fo", []string{"foo"}, ""},
-	&filterTest{"key=value\nfoo=bar", "foo", []string{"foo"}, ""},
-	&filterTest{"key=value\nfoo=bar", "fooo", []string{}, ""},
-	&filterTest{"key=value\nkey2=value2\nfoo=bar", "ey", []string{"key", "key2"}, ""},
-	&filterTest{"key=value\nkey2=value2\nfoo=bar", "key", []string{"key", "key2"}, ""},
-	&filterTest{"key=value\nkey2=value2\nfoo=bar", "^key", []string{"key", "key2"}, ""},
-	&filterTest{"key=value\nkey2=value2\nfoo=bar", "^(key|foo)", []string{"foo", "key", "key2"}, ""},
-	&filterTest{"key=value\nkey2=value2\nfoo=bar", "[ abc", nil, "error parsing regexp.*"},
+}{
+	{"", "", []string{}, ""},
+	{"", "abc", []string{}, ""},
+	{"key=value", "", []string{"key"}, ""},
+	{"key=value", "key=", []string{}, ""},
+	{"key=value\nfoo=bar", "", []string{"foo", "key"}, ""},
+	{"key=value\nfoo=bar", "f", []string{"foo"}, ""},
+	{"key=value\nfoo=bar", "fo", []string{"foo"}, ""},
+	{"key=value\nfoo=bar", "foo", []string{"foo"}, ""},
+	{"key=value\nfoo=bar", "fooo", []string{}, ""},
+	{"key=value\nkey2=value2\nfoo=bar", "ey", []string{"key", "key2"}, ""},
+	{"key=value\nkey2=value2\nfoo=bar", "key", []string{"key", "key2"}, ""},
+	{"key=value\nkey2=value2\nfoo=bar", "^key", []string{"key", "key2"}, ""},
+	{"key=value\nkey2=value2\nfoo=bar", "^(key|foo)", []string{"foo", "key", "key2"}, ""},
+	{"key=value\nkey2=value2\nfoo=bar", "[ abc", nil, "error parsing regexp.*"},
 }
 
 // ----------------------------------------------------------------------------
 
-type filterPrefixTest struct {
+var filterPrefixTests = []struct {
 	input  string
 	prefix string
 	keys   []string
-}
-
-var filterPrefixTests = []*filterPrefixTest{
-	&filterPrefixTest{"", "", []string{}},
-	&filterPrefixTest{"", "abc", []string{}},
-	&filterPrefixTest{"key=value", "", []string{"key"}},
-	&filterPrefixTest{"key=value", "key=", []string{}},
-	&filterPrefixTest{"key=value\nfoo=bar", "", []string{"foo", "key"}},
-	&filterPrefixTest{"key=value\nfoo=bar", "f", []string{"foo"}},
-	&filterPrefixTest{"key=value\nfoo=bar", "fo", []string{"foo"}},
-	&filterPrefixTest{"key=value\nfoo=bar", "foo", []string{"foo"}},
-	&filterPrefixTest{"key=value\nfoo=bar", "fooo", []string{}},
-	&filterPrefixTest{"key=value\nkey2=value2\nfoo=bar", "key", []string{"key", "key2"}},
+}{
+	{"", "", []string{}},
+	{"", "abc", []string{}},
+	{"key=value", "", []string{"key"}},
+	{"key=value", "key=", []string{}},
+	{"key=value\nfoo=bar", "", []string{"foo", "key"}},
+	{"key=value\nfoo=bar", "f", []string{"foo"}},
+	{"key=value\nfoo=bar", "fo", []string{"foo"}},
+	{"key=value\nfoo=bar", "foo", []string{"foo"}},
+	{"key=value\nfoo=bar", "fooo", []string{}},
+	{"key=value\nkey2=value2\nfoo=bar", "key", []string{"key", "key2"}},
 }
 
 // ----------------------------------------------------------------------------
@@ -362,8 +348,9 @@ func (l *TestSuite) TestComplex(c *C) {
 
 func (l *TestSuite) TestErrors(c *C) {
 	for _, test := range errorTests {
-		input, msg := test[0], test[1]
-		testError(c, input, msg)
+		_, err := Load([]byte(test.input), ISO_8859_1)
+		c.Assert(err, NotNil)
+		c.Assert(strings.Contains(err.Error(), test.msg), Equals, true, Commentf("Expected %q got %q", test.msg, err.Error()))
 	}
 }
 
@@ -569,12 +556,11 @@ func (l *TestSuite) TestKeys(c *C) {
 }
 func (l *TestSuite) TestWrite(c *C) {
 	for _, test := range writeTests {
-		input, output, enc := test[0], test[1], test[2]
-		p, err := parse(input)
+		p, err := parse(test.input)
 
 		buf := new(bytes.Buffer)
 		var n int
-		switch enc {
+		switch test.encoding {
 		case "UTF-8":
 			n, err = p.Write(buf, UTF8)
 		case "ISO-8859-1":
@@ -582,8 +568,8 @@ func (l *TestSuite) TestWrite(c *C) {
 		}
 		c.Assert(err, IsNil)
 		s := string(buf.Bytes())
-		c.Assert(n, Equals, len(output), Commentf("input=%q expected=%q obtained=%q", input, output, s))
-		c.Assert(s, Equals, output, Commentf("input=%q expected=%q obtained=%q", input, output, s))
+		c.Assert(n, Equals, len(test.output), Commentf("input=%q expected=%q obtained=%q", test.input, test.output, s))
+		c.Assert(s, Equals, test.output, Commentf("input=%q expected=%q obtained=%q", test.input, test.output, s))
 	}
 }
 
@@ -653,15 +639,6 @@ func testKeyValuePrePostfix(c *C, prefix, postfix, input string, keyvalues ...st
 	p.Prefix = prefix
 	p.Postfix = postfix
 	assertKeyValues(c, input, p, keyvalues...)
-}
-
-// tests whether some input produces a given error message.
-func testError(c *C, input, msg string) {
-	printf("%q\n", input)
-
-	_, err := Load([]byte(input), ISO_8859_1)
-	c.Assert(err, NotNil)
-	c.Assert(strings.Contains(err.Error(), msg), Equals, true, Commentf("Expected %q got %q", msg, err.Error()))
 }
 
 // tests whether key/value pairs exist for a given input.
