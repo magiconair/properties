@@ -44,8 +44,9 @@ type itemType int
 const (
 	itemError itemType = iota // error occurred; value is text of error
 	itemEOF
-	itemKey   // a key
-	itemValue // a value
+	itemKey     // a key
+	itemValue   // a value
+	itemComment // a comment
 )
 
 // defines a constant for EOF
@@ -207,6 +208,8 @@ func lexBeforeKey(l *lexer) stateFn {
 
 // lexComment scans a comment line. The comment character has already been scanned.
 func lexComment(l *lexer) stateFn {
+	l.acceptRun(whitespace)
+	l.ignore()
 	for {
 		switch r := l.next(); {
 		case isEOF(r):
@@ -214,8 +217,10 @@ func lexComment(l *lexer) stateFn {
 			l.emit(itemEOF)
 			return nil
 		case isEOL(r):
-			l.ignore()
+			l.emit(itemComment)
 			return lexBeforeKey
+		default:
+			l.appendRune(r)
 		}
 	}
 }

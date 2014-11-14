@@ -46,6 +46,7 @@ type Properties struct {
 	Postfix string
 
 	m map[string]string
+	c map[string][]string
 }
 
 // NewProperties creates a new Properties struct with the default
@@ -55,6 +56,7 @@ func NewProperties() *Properties {
 		Prefix:  "${",
 		Postfix: "}",
 		m:       make(map[string]string),
+		c:       make(map[string][]string),
 	}
 }
 
@@ -86,6 +88,28 @@ func (p *Properties) MustGet(key string) string {
 	}
 	ErrorHandler(invalidKeyError(key))
 	panic("ErrorHandler should exit")
+}
+
+// ----------------------------------------------------------------------------
+
+// GetComment returns the last comment before the given key or an
+// empty string.
+func (p *Properties) GetComment(key string) string {
+	comments, ok := p.c[key]
+	if !ok || len(comments) == 0 {
+		return ""
+	}
+	return comments[len(comments)-1]
+}
+
+// ----------------------------------------------------------------------------
+
+// GetComments returns all comments that appeared before the given key or nil.
+func (p *Properties) GetComments(key string) []string {
+	if comments, ok := p.c[key]; ok {
+		return comments
+	}
+	return nil
 }
 
 // ----------------------------------------------------------------------------

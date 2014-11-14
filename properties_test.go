@@ -109,8 +109,25 @@ var complexTests = [][]string{
 	{"key=${USER}\nUSER=value", "key", "value", "USER", "value"},
 }
 
-// define error test cases in the form of
-// {"input", "expected error message"}
+var commentTests = []struct {
+	input, key, value string
+	comments          []string
+}{
+	{"key=value", "key", "value", nil},
+	{"#comment\nkey=value", "key", "value", []string{"comment"}},
+	{"# comment\nkey=value", "key", "value", []string{"comment"}},
+	{"#  comment\nkey=value", "key", "value", []string{"comment"}},
+	{"# comment\n\nkey=value", "key", "value", []string{"comment"}},
+	{"# comment1\n# comment2\nkey=value", "key", "value", []string{"comment1", "comment2"}},
+	{"# comment1\n\n# comment2\n\nkey=value", "key", "value", []string{"comment1", "comment2"}},
+	{"!comment\nkey=value", "key", "value", []string{"comment"}},
+	{"! comment\nkey=value", "key", "value", []string{"comment"}},
+	{"!  comment\nkey=value", "key", "value", []string{"comment"}},
+	{"! comment\n\nkey=value", "key", "value", []string{"comment"}},
+	{"! comment1\n! comment2\nkey=value", "key", "value", []string{"comment1", "comment2"}},
+	{"! comment1\n\n! comment2\n\nkey=value", "key", "value", []string{"comment1", "comment2"}},
+}
+
 var errorTests = []struct {
 	input, msg string
 }{
@@ -130,8 +147,6 @@ var errorTests = []struct {
 	{"key=valu${ke", "Malformed expression"},
 }
 
-// define write encoding test cases in the form of
-// {"input", "expected output after write", ["UTF-8", "ISO-8859-1"]}
 var writeTests = []struct {
 	input, output, encoding string
 }{
@@ -502,6 +517,20 @@ func (l *TestSuite) TestMustGetString(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(p.MustGetString("key"), Equals, "value")
 	c.Assert(func() { p.MustGetString("invalid") }, PanicMatches, "unknown property: invalid")
+}
+
+func (l *TestSuite) TestComment(c *C) {
+	for _, test := range commentTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.MustGetString(test.key), Equals, test.value)
+		c.Assert(p.GetComments(test.key), DeepEquals, test.comments)
+		if test.comments != nil {
+			c.Assert(p.GetComment(test.key), Equals, test.comments[len(test.comments)-1])
+		} else {
+			c.Assert(p.GetComment(test.key), Equals, "")
+		}
+	}
 }
 
 func (l *TestSuite) TestFilter(c *C) {
