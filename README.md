@@ -46,11 +46,11 @@ History
 
 v1.4.2, 15 Nov 2014
 -------------------
- * Fixed goroutine leak in parser which created two lexers but cleaned up only one
+ * Issue #2: Fixed goroutine leak in parser which created two lexers but cleaned up only one
 
 v1.4.1, 13 Nov 2014
 -------------------
- * (Issue #1) Fixed bug in Keys() method which returned an empty string
+ * Issue #1: Fixed bug in Keys() method which returned an empty string
 
 v1.4.0, 23 Sep 2014
 -------------------
