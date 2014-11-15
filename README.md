@@ -44,6 +44,10 @@ $ go get -u github.com/magiconair/properties
 History
 -------
 
+v1.4.2, 15 Nov 2014
+-------------------
+ * Fixed goroutine leak in parser which created two lexers but cleaned up only one
+
 v1.4.1, 13 Nov 2014
 -------------------
  * (Issue #1) Fixed bug in Keys() method which returned an empty string

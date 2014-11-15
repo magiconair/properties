@@ -17,7 +17,6 @@ func parse(input string) (properties *Properties, err error) {
 	p := &parser{lex: lex(input)}
 	defer p.recover(&err)
 
-	p.lex = lex(input)
 	properties = NewProperties()
 
 	for {
