@@ -657,9 +657,9 @@ func (l *TestSuite) TestWriteComment(c *C) {
 		var n int
 		switch test.encoding {
 		case "UTF-8":
-			n, err = p.WriteComment(buf, "#", UTF8)
+			n, err = p.WriteComment(buf, "# ", UTF8)
 		case "ISO-8859-1":
-			n, err = p.WriteComment(buf, "#", ISO_8859_1)
+			n, err = p.WriteComment(buf, "# ", ISO_8859_1)
 		}
 		c.Assert(err, IsNil)
 		s := string(buf.Bytes())

@@ -459,7 +459,7 @@ func (p *Properties) Write(w io.Writer, enc Encoding) (n int, err error) {
 
 // WriteComment writes all unexpanced 'key = value' pairs to the given writer.
 // If prefix is not empty then comments are written with a blank line and the
-// given prefix. The prefix should be either "#" or "!" to be compatible with
+// given prefix. The prefix should be either "# " or "! " to be compatible with
 // the properties file format. Otherwise, the properties parser will not be
 // able to read the file back in. It returns the number of bytes written and
 // any write error encountered.
@@ -481,7 +481,7 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 				}
 
 				for _, c := range comments {
-					x, err = fmt.Fprintf(w, "%s %s\n", prefix, encode(c, "", enc))
+					x, err = fmt.Fprintf(w, "%s%s\n", prefix, encode(c, "", enc))
 					if err != nil {
 						return
 					}
