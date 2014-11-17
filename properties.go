@@ -45,8 +45,14 @@ type Properties struct {
 	Prefix  string
 	Postfix string
 
+	// Stores the key/value pairs
 	m map[string]string
+
+	// Stores the comments per key.
 	c map[string][]string
+
+	// Stores the keys in order of appearance.
+	k []string
 }
 
 // NewProperties creates a new Properties struct with the default
@@ -55,8 +61,9 @@ func NewProperties() *Properties {
 	return &Properties{
 		Prefix:  "${",
 		Postfix: "}",
-		m:       make(map[string]string),
-		c:       make(map[string][]string),
+		m:       map[string]string{},
+		c:       map[string][]string{},
+		k:       []string{},
 	}
 }
 
@@ -92,8 +99,14 @@ func (p *Properties) MustGet(key string) string {
 
 // ----------------------------------------------------------------------------
 
-// GetComment returns the last comment before the given key or an
-// empty string.
+// ClearComments removes the comments for all keys.
+func (p *Properties) ClearComments() {
+	p.c = map[string][]string{}
+}
+
+// ----------------------------------------------------------------------------
+
+// GetComment returns the last comment before the given key or an empty string.
 func (p *Properties) GetComment(key string) string {
 	comments, ok := p.c[key]
 	if !ok || len(comments) == 0 {
@@ -110,6 +123,25 @@ func (p *Properties) GetComments(key string) []string {
 		return comments
 	}
 	return nil
+}
+
+// ----------------------------------------------------------------------------
+
+// SetComment sets the comment for the key.
+func (p *Properties) SetComment(key, comment string) {
+	p.c[key] = []string{comment}
+}
+
+// ----------------------------------------------------------------------------
+
+// SetComments sets the comments for the key. If the comments are nil then
+// all comments for this key are deleted.
+func (p *Properties) SetComments(key string, comments []string) {
+	if comments == nil {
+		delete(p.c, key)
+		return
+	}
+	p.c[key] = comments
 }
 
 // ----------------------------------------------------------------------------
@@ -384,11 +416,11 @@ func (p *Properties) Len() int {
 	return len(p.m)
 }
 
-// Keys returns all keys.
+// Keys returns all keys in the same order as in the input.
 func (p *Properties) Keys() []string {
-	keys := make([]string, 0, len(p.m))
-	for k, _ := range p.m {
-		keys = append(keys, k)
+	keys := make([]string, len(p.k))
+	for i, k := range p.k {
+		keys[i] = k
 	}
 	return keys
 }
@@ -412,7 +444,7 @@ func (p *Properties) Set(key, value string) (prev string, ok bool, err error) {
 // String returns a string of all expanded 'key = value' pairs.
 func (p *Properties) String() string {
 	var s string
-	for key, _ := range p.m {
+	for _, key := range p.k {
 		value, _ := p.Get(key)
 		s = fmt.Sprintf("%s%s = %s\n", s, key, value)
 	}
@@ -420,17 +452,51 @@ func (p *Properties) String() string {
 }
 
 // Write writes all unexpanded 'key = value' pairs to the given writer.
-func (p *Properties) Write(w io.Writer, enc Encoding) (int, error) {
-	total := 0
-	for key, value := range p.m {
-		s := fmt.Sprintf("%s = %s\n", encode(key, " :", enc), encode(value, "", enc))
-		n, err := w.Write([]byte(s))
-		if err != nil {
-			return total, err
+// Write returns the number of bytes written and any write error encountered.
+func (p *Properties) Write(w io.Writer, enc Encoding) (n int, err error) {
+	return p.WriteComment(w, "", enc)
+}
+
+// WriteComment writes all unexpanced 'key = value' pairs to the given writer.
+// If prefix is not empty then comments are written with a blank line and the
+// given prefix. The prefix should be either "#" or "!" to be compatible with
+// the properties file format. Otherwise, the properties parser will not be
+// able to read the file back in. It returns the number of bytes written and
+// any write error encountered.
+func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n int, err error) {
+	var x int
+
+	for _, key := range p.k {
+		value := p.m[key]
+
+		if prefix != "" {
+			if comments, ok := p.c[key]; ok {
+				// add a blank line between entries but not at the top
+				if len(comments) > 0 && n > 0 {
+					x, err = fmt.Fprintln(w)
+					if err != nil {
+						return
+					}
+					n += x
+				}
+
+				for _, c := range comments {
+					x, err = fmt.Fprintf(w, "%s %s\n", prefix, encode(c, "", enc))
+					if err != nil {
+						return
+					}
+					n += x
+				}
+			}
 		}
-		total += n
+
+		x, err = fmt.Fprintf(w, "%s = %s\n", encode(key, " :", enc), encode(value, "", enc))
+		if err != nil {
+			return
+		}
+		n += x
 	}
-	return total, nil
+	return
 }
 
 // ----------------------------------------------------------------------------

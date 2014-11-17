@@ -109,6 +109,8 @@ var complexTests = [][]string{
 	{"key=${USER}\nUSER=value", "key", "value", "USER", "value"},
 }
 
+// ----------------------------------------------------------------------------
+
 var commentTests = []struct {
 	input, key, value string
 	comments          []string
@@ -127,6 +129,8 @@ var commentTests = []struct {
 	{"! comment1\n! comment2\nkey=value", "key", "value", []string{"comment1", "comment2"}},
 	{"! comment1\n\n! comment2\n\nkey=value", "key", "value", []string{"comment1", "comment2"}},
 }
+
+// ----------------------------------------------------------------------------
 
 var errorTests = []struct {
 	input, msg string
@@ -147,6 +151,8 @@ var errorTests = []struct {
 	{"key=valu${ke", "Malformed expression"},
 }
 
+// ----------------------------------------------------------------------------
+
 var writeTests = []struct {
 	input, output, encoding string
 }{
@@ -161,6 +167,28 @@ var writeTests = []struct {
 	{"key = value \\\n   continued", "key = value continued\n", "UTF-8"},
 	{"key⌘ = value⌘", "key⌘ = value⌘\n", "UTF-8"},
 	{"ke\\ \\:y = value", "ke\\ \\:y = value\n", "UTF-8"},
+}
+
+// ----------------------------------------------------------------------------
+
+var writeCommentTests = []struct {
+	input, output, encoding string
+}{
+	// ISO-8859-1 tests
+	{"key = value", "key = value\n", "ISO-8859-1"},
+	{"# comment\nkey = value", "# comment\nkey = value\n", "ISO-8859-1"},
+	{"\n# comment\nkey = value", "# comment\nkey = value\n", "ISO-8859-1"},
+	{"# comment\n\nkey = value", "# comment\nkey = value\n", "ISO-8859-1"},
+	{"# comment1\n# comment2\nkey = value", "# comment1\n# comment2\nkey = value\n", "ISO-8859-1"},
+	{"#comment1\nkey1 = value1\n#comment2\nkey2 = value2", "# comment1\nkey1 = value1\n\n# comment2\nkey2 = value2\n", "ISO-8859-1"},
+
+	// UTF-8 tests
+	{"key = value", "key = value\n", "UTF-8"},
+	{"# comment⌘\nkey = value⌘", "# comment⌘\nkey = value⌘\n", "UTF-8"},
+	{"\n# comment⌘\nkey = value⌘", "# comment⌘\nkey = value⌘\n", "UTF-8"},
+	{"# comment⌘\n\nkey = value⌘", "# comment⌘\nkey = value⌘\n", "UTF-8"},
+	{"# comment1⌘\n# comment2⌘\nkey = value⌘", "# comment1⌘\n# comment2⌘\nkey = value⌘\n", "UTF-8"},
+	{"#comment1⌘\nkey1 = value1⌘\n#comment2⌘\nkey2 = value2⌘", "# comment1⌘\nkey1 = value1⌘\n\n# comment2⌘\nkey2 = value2⌘\n", "UTF-8"},
 }
 
 // ----------------------------------------------------------------------------
@@ -299,6 +327,7 @@ var keysTests = []struct {
 	{"", []string{}},
 	{"key = abc", []string{"key"}},
 	{"key = abc\nkey2=def", []string{"key", "key2"}},
+	{"key2 = abc\nkey=def", []string{"key2", "key"}},
 	{"key = abc\nkey=def", []string{"key"}},
 }
 
@@ -530,6 +559,26 @@ func (l *TestSuite) TestComment(c *C) {
 		} else {
 			c.Assert(p.GetComment(test.key), Equals, "")
 		}
+
+		// test setting comments
+		if len(test.comments) > 0 {
+			// set single comment
+			p.ClearComments()
+			c.Assert(len(p.c), Equals, 0)
+			p.SetComment(test.key, test.comments[0])
+			c.Assert(p.GetComment(test.key), Equals, test.comments[0])
+
+			// set multiple comments
+			p.ClearComments()
+			c.Assert(len(p.c), Equals, 0)
+			p.SetComments(test.key, test.comments)
+			c.Assert(p.GetComments(test.key), DeepEquals, test.comments)
+
+			// clear comments for a key
+			p.SetComments(test.key, nil)
+			c.Assert(p.GetComment(test.key), Equals, "")
+			c.Assert(p.GetComments(test.key), IsNil)
+		}
 	}
 }
 
@@ -577,12 +626,10 @@ func (l *TestSuite) TestKeys(c *C) {
 		c.Assert(err, IsNil)
 		c.Assert(p.Len(), Equals, len(test.keys))
 		c.Assert(len(p.Keys()), Equals, len(test.keys))
-		for _, key := range test.keys {
-			_, ok := p.Get(key)
-			c.Assert(ok, Equals, true)
-		}
+		c.Assert(p.Keys(), DeepEquals, test.keys)
 	}
 }
+
 func (l *TestSuite) TestWrite(c *C) {
 	for _, test := range writeTests {
 		p, err := parse(test.input)
@@ -594,6 +641,25 @@ func (l *TestSuite) TestWrite(c *C) {
 			n, err = p.Write(buf, UTF8)
 		case "ISO-8859-1":
 			n, err = p.Write(buf, ISO_8859_1)
+		}
+		c.Assert(err, IsNil)
+		s := string(buf.Bytes())
+		c.Assert(n, Equals, len(test.output), Commentf("input=%q expected=%q obtained=%q", test.input, test.output, s))
+		c.Assert(s, Equals, test.output, Commentf("input=%q expected=%q obtained=%q", test.input, test.output, s))
+	}
+}
+
+func (l *TestSuite) TestWriteComment(c *C) {
+	for _, test := range writeCommentTests {
+		p, err := parse(test.input)
+
+		buf := new(bytes.Buffer)
+		var n int
+		switch test.encoding {
+		case "UTF-8":
+			n, err = p.WriteComment(buf, "#", UTF8)
+		case "ISO-8859-1":
+			n, err = p.WriteComment(buf, "#", ISO_8859_1)
 		}
 		c.Assert(err, IsNil)
 		s := string(buf.Bytes())

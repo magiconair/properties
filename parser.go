@@ -32,6 +32,9 @@ func parse(input string) (properties *Properties, err error) {
 			continue
 		case itemKey:
 			key = token.val
+			if _, ok := properties.m[key]; !ok {
+				properties.k = append(properties.k, key)
+			}
 		}
 
 		token = p.expectOneOf(itemValue, itemEOF)
