@@ -18,22 +18,39 @@ func parse(input string) (properties *Properties, err error) {
 	defer p.recover(&err)
 
 	properties = NewProperties()
+	key := ""
+	comments := []string{}
 
 	for {
-		token := p.expectOneOf(itemKey, itemEOF)
-		if token.typ == itemEOF {
-			break
+		token := p.expectOneOf(itemComment, itemKey, itemEOF)
+		switch token.typ {
+		case itemEOF:
+			goto done
+		case itemComment:
+			comments = append(comments, token.val)
+			continue
+		case itemKey:
+			key = token.val
+			if _, ok := properties.m[key]; !ok {
+				properties.k = append(properties.k, key)
+			}
 		}
-		key := token.val
 
 		token = p.expectOneOf(itemValue, itemEOF)
-		if token.typ == itemEOF {
-			properties.m[key] = ""
-			break
+		if len(comments) > 0 {
+			properties.c[key] = comments
+			comments = []string{}
 		}
-		properties.m[key] = token.val
+		switch token.typ {
+		case itemEOF:
+			properties.m[key] = ""
+			goto done
+		case itemValue:
+			properties.m[key] = token.val
+		}
 	}
 
+done:
 	return properties, nil
 }
 
@@ -50,12 +67,15 @@ func (p *parser) expect(expected itemType) (token item) {
 	return token
 }
 
-func (p *parser) expectOneOf(expected1, expected2 itemType) (token item) {
+func (p *parser) expectOneOf(expected ...itemType) (token item) {
 	token = p.lex.nextItem()
-	if token.typ != expected1 && token.typ != expected2 {
-		p.unexpected(token)
+	for _, v := range expected {
+		if token.typ == v {
+			return token
+		}
 	}
-	return token
+	p.unexpected(token)
+	panic("unexpected token")
 }
 
 func (p *parser) unexpected(token item) {

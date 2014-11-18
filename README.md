@@ -10,6 +10,9 @@ environment variables like in `${USER}`.
 Filenames can also contain environment variables like in
 `/home/${USER}/myapp.properties`.
 
+Comments and the order of keys are preserved. Comments can be modified
+and can be written to the output.
+
 The properties library supports both ISO-8859-1 and UTF-8 encoded data.
 
 Starting from version 1.3.0 the behavior of the MustXXX() functions is
@@ -41,8 +44,22 @@ Installation and Upgrade
 $ go get -u github.com/magiconair/properties
 ```
 
+For testing and debugging you need the [go-check](https://github.com/go-check/check) library
+
+```
+$ go get -u gopkg.in/check.v1
+```
+
 History
 -------
+
+v1.5.0, 18 Nov 2014
+-------------------
+ * Added support for single and multi-line comments (reading, writing and updating)
+ * The order of keys is now preserved
+ * Calling Set() with an empty key now silently ignores the call and does not create a new entry
+ * Added a MustSet() method
+ * Migrated test library from launchpad.net/gocheck to gopkg.in/check.v1
 
 v1.4.2, 15 Nov 2014
 -------------------
