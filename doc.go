@@ -43,6 +43,14 @@
 //   key = val\
 //         ue
 //
+// Properties stores all comments preceding a key and provides
+// GetComments() and SetComments() methods to retrieve and
+// update them. The convenience functions GetComment() and
+// SetComment() allow access to the last comment. The
+// WriteComment() method writes properties files including
+// the comments and with the keys in the original order.
+// This can be used for sanitizing properties files.
+//
 // Property expansion is recursive and circular references
 // and malformed expressions are not allowed and cause an
 // error. Expansion of environment variables is supported.
