@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -376,6 +376,23 @@ var filterPrefixTests = []struct {
 
 // ----------------------------------------------------------------------------
 
+var setTests = []struct {
+	input      string
+	key, value string
+	prev       string
+	ok         bool
+	err        string
+	keys       []string
+}{
+	{"", "", "", "", false, "", []string{}},
+	{"", "key", "value", "", false, "", []string{"key"}},
+	{"key=value", "key2", "value2", "", false, "", []string{"key", "key2"}},
+	{"key=value", "abc", "value3", "", false, "", []string{"key", "abc"}},
+	{"key=value", "key", "value3", "value", true, "", []string{"key"}},
+}
+
+// ----------------------------------------------------------------------------
+
 // TestBasic tests basic single key/value combinations with all possible
 // whitespace, delimiter and newline permutations.
 func (l *TestSuite) TestBasic(c *C) {
@@ -628,6 +645,32 @@ func (l *TestSuite) TestKeys(c *C) {
 		c.Assert(len(p.Keys()), Equals, len(test.keys))
 		c.Assert(p.Keys(), DeepEquals, test.keys)
 	}
+}
+
+func (l *TestSuite) TestSet(c *C) {
+	for _, test := range setTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		prev, ok, err := p.Set(test.key, test.value)
+		if test.err != "" {
+			c.Assert(err, ErrorMatches, test.err)
+			continue
+		}
+
+		c.Assert(err, IsNil)
+		c.Assert(ok, Equals, test.ok)
+		if ok {
+			c.Assert(prev, Equals, test.prev)
+		}
+		c.Assert(p.Keys(), DeepEquals, test.keys)
+	}
+}
+
+func (l *TestSuite) TestMustSet(c *C) {
+	input := "key=${key}"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(func() { p.MustSet("key", "${key}") }, PanicMatches, "Circular reference .*")
 }
 
 func (l *TestSuite) TestWrite(c *C) {

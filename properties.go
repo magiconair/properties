@@ -430,15 +430,49 @@ func (p *Properties) Keys() []string {
 // contains the previous value. If the value contains a
 // circular reference or a malformed expression then
 // an error is returned.
+// An empty key is silently ignored.
 func (p *Properties) Set(key, value string) (prev string, ok bool, err error) {
+	if key == "" {
+		return "", false, nil
+	}
+
+	// to check for a circular reference we temporarily need
+	// to set the new value. If there is an error then revert
+	// to the previous state. Only if all tests are successful
+	// then we add the key to the p.k list.
+	prev, ok = p.Get(key)
+	p.m[key] = value
+
+	// now check for a circular reference
 	_, err = p.expand(value)
 	if err != nil {
+
+		// revert to the previous state
+		if ok {
+			p.m[key] = prev
+		} else {
+			delete(p.m, key)
+		}
+
 		return "", false, err
 	}
 
-	v, ok := p.Get(key)
-	p.m[key] = value
-	return v, ok, nil
+	if !ok {
+		p.k = append(p.k, key)
+	}
+
+	return prev, ok, nil
+}
+
+// MustSet sets the property key to the corresponding value.
+// If a value for key existed before then ok is true and prev
+// contains the previous value. An empty key is silently ignored.
+func (p *Properties) MustSet(key, value string) (prev string, ok bool) {
+	prev, ok, err := p.Set(key, value)
+	if err != nil {
+		ErrorHandler(err)
+	}
+	return prev, ok
 }
 
 // String returns a string of all expanded 'key = value' pairs.
