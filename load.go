@@ -10,10 +10,14 @@ import (
 	"os"
 )
 
+// Encoding specifies encoding of the input data.
 type Encoding uint
 
 const (
+	// UTF8 interprets the input data as UTF-8.
 	UTF8 Encoding = 1 << iota
+
+	// ISO_8859_1 interprets the input data as ISO-8859-1.
 	ISO_8859_1
 )
 
@@ -114,7 +118,7 @@ func convert(buf []byte, enc Encoding) string {
 		}
 		return string(runes)
 	default:
-		ErrorHandler(fmt.Errorf("Unsupported encoding %v", enc))
+		ErrorHandler(fmt.Errorf("unsupported encoding %v", enc))
 	}
 	panic("ErrorHandler should exit")
 }

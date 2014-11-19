@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// properties provides functions for reading and writing
+// Package properties provides functions for reading and writing
 // ISO-8859-1 and UTF-8 encoded .properties files and has
 // support for recursive property expansion.
 //

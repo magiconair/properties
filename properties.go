@@ -26,7 +26,7 @@ type ErrorHandlerFunc func(error)
 
 // ErrorHandler is the function which handles failures of the MustXXX()
 // functions. The default is LogFatalHandler.
-var ErrorHandler ErrorHandlerFunc = LogFatalHandler
+var ErrorHandler = LogFatalHandler
 
 // LogFatalHandler handles the error by logging a fatal error and exiting.
 func LogFatalHandler(err error) {
@@ -40,6 +40,8 @@ func PanicHandler(err error) {
 
 // -----------------------------------------------------------------------------
 
+// A Properties contains the key/value pairs from the properties input.
+// All values are stored in unexpanded form and are expanded at runtime
 type Properties struct {
 	// Pre-/Postfix for property expansion.
 	Prefix  string
@@ -212,7 +214,7 @@ func (p *Properties) GetFloat64(key string, def float64) float64 {
 	return v
 }
 
-// GetFloat64 parses the expanded value as a float64 if the key exists.
+// MustGetFloat64 parses the expanded value as a float64 if the key exists.
 // If key does not exist or the value cannot be parsed the function panics.
 func (p *Properties) MustGetFloat64(key string) float64 {
 	v, err := p.getFloat64(key)
@@ -567,7 +569,7 @@ func expand(s string, keys map[string]bool, prefix, postfix string, values map[s
 	keyStart := start + len(prefix)
 	keyLen := strings.Index(s[keyStart:], postfix)
 	if keyLen == -1 {
-		return "", fmt.Errorf("Malformed expression")
+		return "", fmt.Errorf("malformed expression")
 	}
 
 	end := keyStart + keyLen + len(postfix) - 1
@@ -576,7 +578,7 @@ func expand(s string, keys map[string]bool, prefix, postfix string, values map[s
 	// fmt.Printf("s:%q pp:%q start:%d end:%d keyStart:%d keyLen:%d key:%q\n", s, prefix + "..." + postfix, start, end, keyStart, keyLen, key)
 
 	if _, ok := keys[key]; ok {
-		return "", fmt.Errorf("Circular reference")
+		return "", fmt.Errorf("circular reference")
 	}
 
 	val, ok := values[key]
@@ -598,7 +600,7 @@ func encode(s string, special string, enc Encoding) string {
 	case ISO_8859_1:
 		return encodeIso(s, special)
 	default:
-		panic(fmt.Sprintf("Unsupported encoding %v", enc))
+		panic(fmt.Sprintf("unsupported encoding %v", enc))
 	}
 }
 
