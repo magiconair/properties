@@ -242,6 +242,30 @@ var durationTests = []struct {
 
 // ----------------------------------------------------------------------------
 
+var parsedDurationTests = []struct {
+	input, key string
+	def, value time.Duration
+}{
+	// valid values
+	{"key = -1ns", "key", 999, -1*time.Nanosecond},
+	{"key = 300ms", "key", 999, 300*time.Millisecond},
+	{"key = 5s", "key", 999, 5*time.Second},
+	{"key = 3h", "key", 999, 3*time.Hour},
+	{"key = 2h45m", "key", 999, 2*time.Hour+45*time.Minute},
+
+	// invalid values
+	{"key = 0xff", "key", 999, 999},
+	{"key = 1.0", "key", 999, 999},
+	{"key = a", "key", 999, 999},
+	{"key = 1", "key", 999, 999},
+	{"key = 0", "key", 999, 0},
+
+	// non existent key
+	{"key = 1", "key2", 999, 999},
+}
+
+// ----------------------------------------------------------------------------
+
 var floatTests = []struct {
 	input, key string
 	def, value float64
@@ -456,6 +480,24 @@ func (s *TestSuite) TestMustGetDuration(c *C) {
 	c.Assert(p.MustGetDuration("key"), Equals, time.Duration(123))
 	c.Assert(func() { p.MustGetDuration("key2") }, PanicMatches, "strconv.ParseInt: parsing.*")
 	c.Assert(func() { p.MustGetDuration("invalid") }, PanicMatches, "unknown property: invalid")
+}
+
+func (s *TestSuite) TestGetParsedDuration(c *C) {
+	for _, test := range parsedDurationTests {
+		p, err := parse(test.input)
+		c.Assert(err, IsNil)
+		c.Assert(p.Len(), Equals, 1)
+		c.Assert(p.GetParsedDuration(test.key, test.def), Equals, test.value)
+	}
+}
+
+func (s *TestSuite) TestMustGetParsedDuration(c *C) {
+	input := "key = 123ms\nkey2 = ghi"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Assert(p.MustGetParsedDuration("key"), Equals, 123*time.Millisecond)
+	c.Assert(func() { p.MustGetParsedDuration("key2") }, PanicMatches, "time: invalid duration ghi")
+	c.Assert(func() { p.MustGetParsedDuration("invalid") }, PanicMatches, "unknown property: invalid")
 }
 
 func (s *TestSuite) TestGetFloat64(c *C) {

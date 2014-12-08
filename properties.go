@@ -180,9 +180,9 @@ func (p *Properties) getBool(key string) (value bool, err error) {
 
 // ----------------------------------------------------------------------------
 
-// GetDuration parses the expanded value as an time.Duration if the key exists.
-// If key does not exist or the value cannot be parsed the default
-// value is returned.
+// GetDuration parses the expanded value as an time.Duration (in ns) if the
+// key exists. If key does not exist or the value cannot be parsed the default
+// value is returned. In almost all cases you want to use GetParsedDuration().
 func (p *Properties) GetDuration(key string, def time.Duration) time.Duration {
 	v, err := p.getInt64(key)
 	if err != nil {
@@ -191,14 +191,46 @@ func (p *Properties) GetDuration(key string, def time.Duration) time.Duration {
 	return time.Duration(v)
 }
 
-// MustGetDuration parses the expanded value as an time.Duration if the key exists.
-// If key does not exist or the value cannot be parsed the function panics.
+// MustGetDuration parses the expanded value as an time.Duration (in ns) if
+// the key exists. If key does not exist or the value cannot be parsed the
+// function panics. In almost all cases you want to use MustGetParsedDuration().
 func (p *Properties) MustGetDuration(key string) time.Duration {
 	v, err := p.getInt64(key)
 	if err != nil {
 		ErrorHandler(err)
 	}
 	return time.Duration(v)
+}
+
+// ----------------------------------------------------------------------------
+
+// GetParsedDuration parses the expanded value with time.ParseDuration() if the key exists.
+// If key does not exist or the value cannot be parsed the default
+// value is returned.
+func (p *Properties) GetParsedDuration(key string, def time.Duration) time.Duration {
+	s, ok := p.Get(key)
+	if !ok {
+		return def
+	}
+	v, err := time.ParseDuration(s)
+	if err != nil {
+		return def
+	}
+	return v
+}
+
+// MustGetParsedDuration parses the expanded value with time.ParseDuration() if the key exists.
+// If key does not exist or the value cannot be parsed the function panics.
+func (p *Properties) MustGetParsedDuration(key string) time.Duration {
+	s, ok := p.Get(key)
+	if !ok {
+		ErrorHandler(invalidKeyError(key))
+	}
+	v, err := time.ParseDuration(s)
+	if err != nil {
+		ErrorHandler(err)
+	}
+	return v
 }
 
 // ----------------------------------------------------------------------------

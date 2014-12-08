@@ -53,6 +53,11 @@ $ go get -u gopkg.in/check.v1
 History
 -------
 
+v1.5.1, 08 Dec 2014
+-------------------
+ * Added GetParsedDuration() and MustGetParsedDuration() for values specified compatible with
+   [time.ParseDuration()](http://golang.org/pkg/time/#ParseDuration).
+
 v1.5.0, 18 Nov 2014
 -------------------
  * Added support for single and multi-line comments (reading, writing and updating)
