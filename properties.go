@@ -596,6 +596,15 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 
 // ----------------------------------------------------------------------------
 
+// deletes the key from the map and its comments
+// abides by the rules of the builtin delete()
+func (p *Properties) Delete(key string) () {
+	delete(p.m, key)
+	delete(p.c, key)
+}
+
+// ----------------------------------------------------------------------------
+
 // check expands all values and returns an error if a circular reference or
 // a malformed expression was found.
 func (p *Properties) check() error {
