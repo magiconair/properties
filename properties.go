@@ -596,7 +596,7 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 
 // ----------------------------------------------------------------------------
 
-// deletes the key from the map and comments
+// removes the key (and its comments) from the properties
 // abides by the rules of the builtin delete()
 func (p *Properties) Delete(key string) () {
 	delete(p.m, key)
