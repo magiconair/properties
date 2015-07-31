@@ -53,6 +53,10 @@ $ go get -u gopkg.in/check.v1
 History
 -------
 
+v1.5.5, 31 Jul 2015
+-------------------
+ * [Pull Request #6](https://github.com/magiconair/properties/pull/6): Add [Delete](http://godoc.org/github.com/magiconair/properties#Properties.Delete) method to remove keys including comments. (@gerbenjacobs)
+
 v1.5.4, 23 Jun 2015
 -------------------
  * [Issue #5](https://github.com/magiconair/properties/issues/5): Allow disabling of property expansion [DisableExpansion](http://godoc.org/github.com/magiconair/properties#Properties.DisableExpansion). When property expansion is disabled Properties become a simple key/value store and don't check for circular references.
