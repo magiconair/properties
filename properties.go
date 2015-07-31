@@ -596,9 +596,8 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 
 // ----------------------------------------------------------------------------
 
-// Delete removes the key and its comments
-// abides by the rules of the builtin delete()
-func (p *Properties) Delete(key string) () {
+// Delete removes the key and its comments.
+func (p *Properties) Delete(key string) {
 	delete(p.m, key)
 	delete(p.c, key)
 	newKeys := []string{}
