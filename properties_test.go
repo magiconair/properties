@@ -797,6 +797,32 @@ func (s *TestSuite) TestPanicOn32BitUintOverflow(c *C) {
 	c.Assert(func() { p.MustGetUint("max") }, PanicMatches, ".* out of range")
 }
 
+func (s *TestSuite) TestDeleteKey(c *C) {
+	input := "#comments should also be gone\nkey=to-be-deleted\nsecond=key"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Check(len(p.m), Equals, 2)
+	c.Check(len(p.c), Equals, 1)
+	c.Check(len(p.k), Equals, 2)
+	p.Delete("key")
+	c.Check(len(p.m), Equals, 1)
+	c.Check(len(p.c), Equals, 0)
+	c.Check(len(p.k), Equals, 1)
+}
+
+func (s *TestSuite) TestDeleteUnknownKey(c *C) {
+	input := "#comments should also be gone\nkey=to-be-deleted"
+	p, err := parse(input)
+	c.Assert(err, IsNil)
+	c.Check(len(p.m), Equals, 1)
+	c.Check(len(p.c), Equals, 1)
+	c.Check(len(p.k), Equals, 1)
+	p.Delete("wrong-key")
+	c.Check(len(p.m), Equals, 1)
+	c.Check(len(p.c), Equals, 1)
+	c.Check(len(p.k), Equals, 1)
+}
+
 // ----------------------------------------------------------------------------
 
 // tests all combinations of delimiters, leading and/or trailing whitespace and newlines.
