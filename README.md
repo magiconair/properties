@@ -44,14 +44,12 @@ Installation and Upgrade
 $ go get -u github.com/magiconair/properties
 ```
 
-For testing and debugging you need the [go-check](https://github.com/go-check/check) library
-
-```
-$ go get -u gopkg.in/check.v1
-```
-
 History
 -------
+
+v1.5.6, 18 Oct 2015
+-------------------
+ * Vendored in gopkg.in/check.v1
 
 v1.5.5, 31 Jul 2015
 -------------------
