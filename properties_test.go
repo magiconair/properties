@@ -403,6 +403,25 @@ var filterPrefixTests = []struct {
 
 // ----------------------------------------------------------------------------
 
+var filterStripPrefixTests = []struct {
+	input  string
+	prefix string
+	keys   []string
+}{
+	{"", "", []string{}},
+	{"", "abc", []string{}},
+	{"key=value", "", []string{"key"}},
+	{"key=value", "key=", []string{}},
+	{"key=value\nfoo=bar", "", []string{"foo", "key"}},
+	{"key=value\nfoo=bar", "f", []string{"foo"}},
+	{"key=value\nfoo=bar", "fo", []string{"foo"}},
+	{"key=value\nfoo=bar", "foo", []string{"foo"}},
+	{"key=value\nfoo=bar", "fooo", []string{}},
+	{"key=value\nkey2=value2\nfoo=bar", "key", []string{"key", "key2"}},
+}
+
+// ----------------------------------------------------------------------------
+
 var setTests = []struct {
 	input      string
 	key, value string
