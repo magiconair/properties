@@ -808,11 +808,11 @@ func (s *TestSuite) TestPanicOn32BitIntOverflow(c *C) {
 
 func (s *TestSuite) TestPanicOn32BitUintOverflow(c *C) {
 	is32Bit = true
-	var max = math.MaxUint32 + 1
+	var max uint64 = math.MaxUint32 + 1
 	input := fmt.Sprintf("max=%d", max)
 	p, err := parse(input)
 	c.Assert(err, IsNil)
-	c.Assert(p.MustGetUint64("max"), Equals, uint64(max))
+	c.Assert(p.MustGetUint64("max"), Equals, max)
 	c.Assert(func() { p.MustGetUint("max") }, PanicMatches, ".* out of range")
 }
 
