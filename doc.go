@@ -102,6 +102,16 @@
 //   v = p.GetString("key", "def")
 //   v = p.GetDuration("key", 999)
 //
+// As an alterantive properties may be applied with the standard
+// library's flag implementation at any time.
+//
+//   # Standard configuration
+//   v = flag.Int("key", 999, "help message")
+//   flag.Parse()
+//
+//   # Merge p into the flag set
+//   p.MustFlag(flag.CommandLine)
+//
 // Properties provides several MustXXX() convenience functions
 // which will terminate the app if an error occurs. The behavior
 // of the failure is configurable and the default is to call
