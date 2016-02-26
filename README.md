@@ -30,7 +30,10 @@ Getting Started
 ---------------
 
 ```go
-import "github.com/magiconair/properties"
+import (
+	"flag"
+	"github.com/magiconair/properties"
+)
 
 func main() {
 	p := properties.MustLoadFile("${HOME}/config.properties", properties.UTF8)
@@ -39,7 +42,7 @@ func main() {
 	host := p.MustGetString("host")
 	port := p.GetInt("port", 8080)
 
-    // or via decode
+	// or via decode
 	type Config struct {
 		Host    string        `properties:"host"`
 		Port    int           `properties:"port,default=9000"`
@@ -50,6 +53,9 @@ func main() {
 	if err := p.Decode(&cfg); err != nil {
 		log.Fatal(err)
 	}
+
+	// or via flags
+	p.MustFlag(flag.CommandLine)
 }
 
 ```
