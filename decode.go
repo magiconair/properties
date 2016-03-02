@@ -89,13 +89,49 @@ import (
 //     Field map[string]string `properties:"myName"`
 func (p *Properties) Decode(x interface{}) error {
 	t, v := reflect.TypeOf(x), reflect.ValueOf(x)
-	if t.Kind() != reflect.Ptr || v.Elem().Type().Kind() != reflect.Struct {
-		return fmt.Errorf("not a pointer to struct: %s", t)
+
+	if isPtr(t) {
+		elemT := v.Elem().Type()
+		switch {
+		case isMap(elemT):
+			m, ok := x.(*map[string]interface{})
+			if !ok {
+				return fmt.Errorf("map type not map[string]interface {}", elemT)
+			}
+			for _, key := range p.Keys() {
+				value, _ := p.Get(key)
+				setNestedKey(*m, key, value)
+			}
+			return nil
+
+		case isStruct(elemT):
+			if err := dec(p, "", nil, nil, v); err != nil {
+				return err
+			}
+			return nil
+		}
 	}
-	if err := dec(p, "", nil, nil, v); err != nil {
-		return err
+
+	return fmt.Errorf("not a pointer to map or struct: %s", t)
+}
+
+func setNestedKey(m map[string]interface{}, key string, value interface{}) {
+	if strings.Contains(key, ".") {
+		kk := strings.SplitN(key, ".", 2)
+		prefix, rest := kk[0], kk[1]
+		if _, ok := m[prefix]; !ok {
+			m[prefix] = map[string]interface{}{}
+		}
+		setNestedKey(m[prefix].(map[string]interface{}), rest, value)
+	} else {
+		if reflect.TypeOf(value).Kind() == reflect.String {
+			val := value.(string)
+			if strings.Contains(val, ";") {
+				value = split(val, ";")
+			}
+		}
+		m[key] = value
 	}
-	return nil
 }
 
 func dec(p *Properties, key string, def *string, opts map[string]string, v reflect.Value) error {
