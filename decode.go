@@ -26,6 +26,8 @@ import (
 // time.Time fields have the vaule of time.Parse() assigned. The default layout
 // is time.RFC3339 but can be set in the field's tag.
 //
+// interface{} fields have the value assigned as string.
+//
 // Arrays and slices of string, boolean, numeric, time.Duration and time.Time
 // fields have the value interpreted as a comma separated list of values. The
 // individual values are trimmed of whitespace and empty values are ignored. A
@@ -229,6 +231,13 @@ func dec(p *Properties, key string, def *string, opts map[string]string, v refle
 		}
 		v.Set(m)
 
+	case isInterface(t):
+		val, err := value()
+		if err != nil {
+			return err
+		}
+		v.Set(reflect.ValueOf(val))
+
 	default:
 		return fmt.Errorf("unsupported type %s", t)
 	}
@@ -266,15 +275,16 @@ func parseTag(tag string) (key string, opts map[string]string) {
 	return key, opts
 }
 
-func isArray(t reflect.Type) bool    { return t.Kind() == reflect.Array || t.Kind() == reflect.Slice }
-func isBool(t reflect.Type) bool     { return t.Kind() == reflect.Bool }
-func isDuration(t reflect.Type) bool { return t == reflect.TypeOf(time.Second) }
-func isMap(t reflect.Type) bool      { return t.Kind() == reflect.Map }
-func isNumeric(t reflect.Type) bool  { return isInt(t) || isUint(t) || isFloat(t) }
-func isPtr(t reflect.Type) bool      { return t.Kind() == reflect.Ptr }
-func isString(t reflect.Type) bool   { return t.Kind() == reflect.String }
-func isStruct(t reflect.Type) bool   { return t.Kind() == reflect.Struct }
-func isTime(t reflect.Type) bool     { return t == reflect.TypeOf(time.Time{}) }
+func isArray(t reflect.Type) bool     { return t.Kind() == reflect.Array || t.Kind() == reflect.Slice }
+func isBool(t reflect.Type) bool      { return t.Kind() == reflect.Bool }
+func isDuration(t reflect.Type) bool  { return t == reflect.TypeOf(time.Second) }
+func isInterface(t reflect.Type) bool { return t.Kind() == reflect.Interface }
+func isMap(t reflect.Type) bool       { return t.Kind() == reflect.Map }
+func isNumeric(t reflect.Type) bool   { return isInt(t) || isUint(t) || isFloat(t) }
+func isPtr(t reflect.Type) bool       { return t.Kind() == reflect.Ptr }
+func isString(t reflect.Type) bool    { return t.Kind() == reflect.String }
+func isStruct(t reflect.Type) bool    { return t.Kind() == reflect.Struct }
+func isTime(t reflect.Type) bool      { return t == reflect.TypeOf(time.Time{}) }
 func isFloat(t reflect.Type) bool {
 	return t.Kind() == reflect.Float32 || t.Kind() == reflect.Float64
 }

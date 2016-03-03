@@ -25,6 +25,7 @@ func TestDecodeValues(t *testing.T) {
 		F64 float64
 		D   time.Duration
 		TM  time.Time
+		IF  interface{}
 	}
 	in := `
 	S=abc
@@ -44,6 +45,7 @@ func TestDecodeValues(t *testing.T) {
 	F64=6.4
 	D=5s
 	TM=2015-01-02T12:34:56Z
+	IF=interface
 	`
 	out := &S{
 		S:   "abc",
@@ -63,6 +65,7 @@ func TestDecodeValues(t *testing.T) {
 		F64: 6.4,
 		D:   5 * time.Second,
 		TM:  tm(t, time.RFC3339, "2015-01-02T12:34:56Z"),
+		IF:  "interface",
 	}
 	testDecode(t, in, &S{}, out)
 }
@@ -86,6 +89,7 @@ func TestDecodeValueDefaults(t *testing.T) {
 		F64 float64       `properties:",default=6.4"`
 		D   time.Duration `properties:",default=5s"`
 		TM  time.Time     `properties:",default=2015-01-02T12:34:56Z"`
+		IF  interface{}   `properties:",default=abc"`
 	}
 	out := &S{
 		S:   "abc",
@@ -105,6 +109,7 @@ func TestDecodeValueDefaults(t *testing.T) {
 		F64: 6.4,
 		D:   5 * time.Second,
 		TM:  tm(t, time.RFC3339, "2015-01-02T12:34:56Z"),
+		IF:  "abc",
 	}
 	testDecode(t, "", &S{}, out)
 }
@@ -251,6 +256,7 @@ func TestDecodeMap(t *testing.T) {
 		D map[string]S
 		E map[string]int
 		F map[string]int `properties:"-"`
+		G map[string]interface{}
 	}
 	in := `
 	A.foo=bar
@@ -262,6 +268,7 @@ func TestDecodeMap(t *testing.T) {
 	C.bar.three=3
 	C.bar.four=4
 	D.foo.a=bar
+	G.foo=bar
 	`
 	out := &X{
 		A: map[string]string{"foo": "bar", "bar": "bang"},
@@ -269,6 +276,7 @@ func TestDecodeMap(t *testing.T) {
 		C: map[string]map[string]string{"foo": map[string]string{"one": "1", "two": "2"}, "bar": map[string]string{"three": "3", "four": "4"}},
 		D: map[string]S{"foo": S{"bar"}},
 		E: map[string]int{},
+		G: map[string]interface{}{"foo": "bar"},
 	}
 	testDecode(t, in, &X{}, out)
 }
