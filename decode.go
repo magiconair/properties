@@ -8,12 +8,16 @@ import (
 	"time"
 )
 
-// Decode assigns property values to exported fields of a struct.
+// Decode assigns property values to exported fields of a struct or a
+// map[string]interface{}.
 //
-// Decode traverses v recursively and returns an error if a value cannot be
+// Decode traverses x recursively and returns an error if a value cannot be
 // converted to the field type or a required value is missing for a field.
+// If x is a map[string]interface{} the keys are traversed using dot notation.
+// Values which contain semicolons are decoded as []string and all other
+// values are decoded as string values.
 //
-// The following type dependent decodings are used:
+// For structs the following type dependent decodings are used:
 //
 // String, boolean, numeric fields have the value of the property key assigned.
 // The property key name is the name of the field. A different key and a default
@@ -89,52 +93,50 @@ import (
 //     Field map[string]string `properties:"myName"`
 func (p *Properties) Decode(x interface{}) error {
 	t, v := reflect.TypeOf(x), reflect.ValueOf(x)
+	elemT := v.Elem().Type()
 
-	if isPtr(t) {
-		elemT := v.Elem().Type()
-		switch {
-		case isMap(elemT):
-			m, ok := x.(*map[string]interface{})
-			if !ok {
-				return fmt.Errorf("map type not map[string]interface {}", elemT)
-			}
-			for _, key := range p.Keys() {
-				value, _ := p.Get(key)
-				setNestedKey(*m, key, value)
-			}
-			return nil
-
-		case isStruct(elemT):
-			if err := dec(p, "", nil, nil, v); err != nil {
-				return err
-			}
-			return nil
+	switch {
+	case isPtr(t) && isMap(elemT):
+		m, ok := x.(*map[string]interface{})
+		if !ok {
+			return fmt.Errorf("not a map[string]interface{}: %s", elemT)
 		}
-	}
-
-	return fmt.Errorf("not a pointer to map or struct: %s", t)
-}
-
-func setNestedKey(m map[string]interface{}, key string, value interface{}) {
-	if strings.Contains(key, ".") {
-		kk := strings.SplitN(key, ".", 2)
-		prefix, rest := kk[0], kk[1]
-		if _, ok := m[prefix]; !ok {
-			m[prefix] = map[string]interface{}{}
+		for key, val := range p.m {
+			decMap(*m, key, val)
 		}
-		setNestedKey(m[prefix].(map[string]interface{}), rest, value)
-	} else {
-		if reflect.TypeOf(value).Kind() == reflect.String {
-			val := value.(string)
-			if strings.Contains(val, ";") {
-				value = split(val, ";")
-			}
+		return nil
+
+	case isPtr(t) && isStruct(elemT):
+		if err := decStruct(p, "", nil, nil, v); err != nil {
+			return err
 		}
-		m[key] = value
+		return nil
+
+	default:
+		return fmt.Errorf("not a pointer to map or struct: %s", t)
 	}
 }
 
-func dec(p *Properties, key string, def *string, opts map[string]string, v reflect.Value) error {
+func decMap(m map[string]interface{}, key, val string) {
+	if !strings.Contains(key, ".") {
+		// TODO(cp): why support arrays and why semicolons instead of comma like decStruct?
+		if strings.Contains(val, ";") {
+			m[key] = split(val, ";")
+		} else {
+			m[key] = val
+		}
+		return
+	}
+
+	kk := strings.SplitN(key, ".", 2)
+	prefix, rest := kk[0], kk[1]
+	if _, ok := m[prefix]; !ok {
+		m[prefix] = map[string]interface{}{}
+	}
+	decMap(m[prefix].(map[string]interface{}), rest, val)
+}
+
+func decStruct(p *Properties, key string, def *string, opts map[string]string, v reflect.Value) error {
 	t := v.Type()
 
 	// value returns the property value for key or the default if provided.
@@ -215,7 +217,7 @@ func dec(p *Properties, key string, def *string, opts map[string]string, v refle
 		v.Set(val)
 
 	case isPtr(t):
-		return dec(p, key, def, opts, v.Elem())
+		return decStruct(p, key, def, opts, v.Elem())
 
 	case isStruct(t):
 		for i := 0; i < v.NumField(); i++ {
@@ -230,7 +232,7 @@ func dec(p *Properties, key string, def *string, opts map[string]string, v refle
 			if key != "" {
 				fk = key + "." + fk
 			}
-			if err := dec(p, fk, def, opts, fv); err != nil {
+			if err := decStruct(p, fk, def, opts, fv); err != nil {
 				return err
 			}
 		}
@@ -258,7 +260,7 @@ func dec(p *Properties, key string, def *string, opts map[string]string, v refle
 		for postfix, _ := range p.FilterStripPrefix(key + ".").m {
 			pp := strings.SplitN(postfix, ".", 2)
 			mk, mv := pp[0], reflect.New(valT)
-			if err := dec(p, key+"."+mk, nil, nil, mv); err != nil {
+			if err := decStruct(p, key+"."+mk, nil, nil, mv); err != nil {
 				return err
 			}
 			m.SetMapIndex(reflect.ValueOf(mk), mv.Elem())

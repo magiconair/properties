@@ -273,7 +273,7 @@ func TestDecodeMap(t *testing.T) {
 	testDecode(t, in, &X{}, out)
 }
 
-func TestDecodeToStringMap(t *testing.T) {
+func TestDecodeStringMap(t *testing.T) {
 	type S struct {
 		A string
 	}
