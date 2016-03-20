@@ -5,12 +5,11 @@ Overview [![Build Status](https://travis-ci.org/magiconair/properties.svg?branch
 
 properties is a Go library for reading and writing properties files.
 
-It supports reading from multiple files and Spring style recursive property
-expansion of expressions like `${key}` to their corresponding value.
-Value expressions can refer to other keys like in `${key}` or to
-environment variables like in `${USER}`.
-Filenames can also contain environment variables like in
-`/home/${USER}/myapp.properties`.
+It supports reading from multiple files or URLs and Spring style recursive
+property expansion of expressions like `${key}` to their corresponding value.
+Value expressions can refer to other keys like in `${key}` or to environment
+variables like in `${USER}`.  Filenames can also contain environment variables
+like in `/home/${USER}/myapp.properties`.
 
 Properties can be decoded into structs, maps, arrays and values through
 struct tags.
@@ -56,6 +55,9 @@ func main() {
 
 	// or via flags
 	p.MustFlag(flag.CommandLine)
+
+	// or via url
+	p = properties.MustLoadURL("http://host/path")
 }
 
 ```

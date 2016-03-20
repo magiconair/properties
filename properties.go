@@ -26,7 +26,11 @@ type ErrorHandlerFunc func(error)
 
 // ErrorHandler is the function which handles failures of the MustXXX()
 // functions. The default is LogFatalHandler.
-var ErrorHandler = LogFatalHandler
+var ErrorHandler ErrorHandlerFunc = LogFatalHandler
+
+type LogHandlerFunc func(fmt string, args ...interface{})
+
+var LogPrintf LogHandlerFunc = log.Printf
 
 // LogFatalHandler handles the error by logging a fatal error and exiting.
 func LogFatalHandler(err error) {

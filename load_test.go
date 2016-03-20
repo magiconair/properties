@@ -7,6 +7,8 @@ package properties
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 
@@ -73,6 +75,55 @@ func (s *LoadSuite) TestLoadFilesAndIgnoreMissing(c *C) {
 	assertKeyValues(c, "", p, "key", "value", "key2", "value2")
 }
 
+func (s *LoadSuite) TestLoadURL(c *C) {
+	srv := testServer()
+	defer srv.Close()
+	p := MustLoadURL(srv.URL + "/a")
+	assertKeyValues(c, "", p, "key", "value")
+}
+
+func (s *LoadSuite) TestLoadURLs(c *C) {
+	srv := testServer()
+	defer srv.Close()
+	p := MustLoadURLs([]string{srv.URL + "/a", srv.URL + "/b"}, false)
+	assertKeyValues(c, "", p, "key", "value", "key2", "value2")
+}
+
+func (s *LoadSuite) TestLoadURLsAndFailMissing(c *C) {
+	srv := testServer()
+	defer srv.Close()
+	p, err := LoadURLs([]string{srv.URL + "/a", srv.URL + "/c"}, false)
+	c.Assert(p, IsNil)
+	c.Assert(err, ErrorMatches, ".*returned 404.*")
+}
+
+func (s *LoadSuite) TestLoadURLsAndIgnoreMissing(c *C) {
+	srv := testServer()
+	defer srv.Close()
+	p := MustLoadURLs([]string{srv.URL + "/a", srv.URL + "/b", srv.URL + "/c"}, true)
+	assertKeyValues(c, "", p, "key", "value", "key2", "value2")
+}
+
+func (s *LoadSuite) TestLoadURLEncoding(c *C) {
+	srv := testServer()
+	defer srv.Close()
+
+	uris := []string{"/none", "/utf8", "/plain", "/latin1", "/iso88591"}
+	for i, uri := range uris {
+		p := MustLoadURL(srv.URL + uri)
+		c.Assert(p.GetString("key", ""), Equals, "äöü", Commentf("%d", i))
+	}
+}
+
+func (s *LoadSuite) TestLoadURLFailInvalidEncoding(c *C) {
+	srv := testServer()
+	defer srv.Close()
+
+	p, err := LoadURL(srv.URL + "/json")
+	c.Assert(p, IsNil)
+	c.Assert(err, ErrorMatches, ".*invalid content type.*")
+}
+
 func (s *LoadSuite) SetUpSuite(c *C) {
 	s.tempFiles = make([]string, 0)
 }
@@ -117,4 +168,37 @@ func (s *LoadSuite) makeFilePrefix(c *C, prefix, data string) string {
 	}
 
 	return f.Name()
+}
+
+func testServer() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		send := func(data []byte, contentType string) {
+			w.Header().Set("Content-Type", contentType)
+			w.Write(data)
+		}
+
+		utf8 := []byte("key=äöü")
+		iso88591 := []byte{0x6b, 0x65, 0x79, 0x3d, 0xe4, 0xf6, 0xfc} // key=äöü
+
+		switch r.RequestURI {
+		case "/a":
+			send([]byte("key=value"), "")
+		case "/b":
+			send([]byte("key2=value2"), "")
+		case "/none":
+			send(utf8, "")
+		case "/utf8":
+			send(utf8, "text/plain; charset=utf-8")
+		case "/json":
+			send(utf8, "application/json; charset=utf-8")
+		case "/plain":
+			send(iso88591, "text/plain")
+		case "/latin1":
+			send(iso88591, "text/plain; charset=latin1")
+		case "/iso88591":
+			send(iso88591, "text/plain; charset=iso-8859-1")
+		default:
+			w.WriteHeader(404)
+		}
+	}))
 }

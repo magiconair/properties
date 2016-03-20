@@ -5,9 +5,12 @@
 package properties
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"strings"
 )
 
 // Encoding specifies encoding of the input data.
@@ -43,6 +46,26 @@ func LoadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Propertie
 	return loadFiles(filenames, enc, ignoreMissing)
 }
 
+// LoadURL reads the content of the URL into a Properties struct.
+//
+// The encoding is determined via the Content-Type header which
+// should be set to 'text/plain'. If the 'charset' parameter is
+// missing, 'iso-8859-1' or 'latin1' the encoding is set to
+// ISO-8859-1. If the 'charset' parameter is set to 'utf-8' the
+// encoding is set to UTF-8. A missing content type header is
+// interpreted as 'text/plain; charset=utf-8'.
+func LoadURL(url string) (*Properties, error) {
+	return loadURLs([]string{url}, false)
+}
+
+// LoadURLs reads the content of multiple URLs in the given order into a
+// Properties struct. If 'ignoreMissing' is true then a 404 status code will
+// not be reported as error. See LoadURL for the Content-Type header
+// and the encoding.
+func LoadURLs(urls []string, ignoreMissing bool) (*Properties, error) {
+	return loadURLs(urls, ignoreMissing)
+}
+
 // MustLoadString reads an UTF8 string into a Properties struct and
 // panics on error.
 func MustLoadString(s string) *Properties {
@@ -62,6 +85,19 @@ func MustLoadFiles(filenames []string, enc Encoding, ignoreMissing bool) *Proper
 	return must(LoadFiles(filenames, enc, ignoreMissing))
 }
 
+// MustLoadURL reads the content of a URL into a Properties struct and
+// panics on error.
+func MustLoadURL(url string) *Properties {
+	return must(LoadURL(url))
+}
+
+// MustLoadFiles reads the content of multiple URLs in the given order into a
+// Properties struct and panics on error. If 'ignoreMissing' is true then a 404
+// status code will not be reported as error.
+func MustLoadURLs(urls []string, ignoreMissing bool) *Properties {
+	return must(LoadURLs(urls, ignoreMissing))
+}
+
 func loadBuf(buf []byte, enc Encoding) (*Properties, error) {
 	p, err := parse(convert(buf, enc))
 	if err != nil {
@@ -71,18 +107,17 @@ func loadBuf(buf []byte, enc Encoding) (*Properties, error) {
 }
 
 func loadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Properties, error) {
-	buff := make([]byte, 0, 4096)
-
+	var buf bytes.Buffer
 	for _, filename := range filenames {
 		f, err := expandFilename(filename)
 		if err != nil {
 			return nil, err
 		}
 
-		buf, err := ioutil.ReadFile(f)
+		data, err := ioutil.ReadFile(f)
 		if err != nil {
 			if ignoreMissing && os.IsNotExist(err) {
-				// TODO(frank): should we log that we are skipping the file?
+				LogPrintf("properties: %s not found. skipping", filename)
 				continue
 			}
 			return nil, err
@@ -90,10 +125,47 @@ func loadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Propertie
 
 		// concatenate the buffers and add a new line in case
 		// the previous file didn't end with a new line
-		buff = append(append(buff, buf...), '\n')
+		buf.Write(data)
+		buf.WriteRune('\n')
 	}
+	return loadBuf(buf.Bytes(), enc)
+}
 
-	return loadBuf(buff, enc)
+func loadURLs(urls []string, ignoreMissing bool) (*Properties, error) {
+	var buf bytes.Buffer
+	for _, u := range urls {
+		resp, err := http.Get(u)
+		if err != nil {
+			return nil, fmt.Errorf("properties: error fetching %q. %s", u, err)
+		}
+		if resp.StatusCode == 404 && ignoreMissing {
+			LogPrintf("properties: %s returned %d. skipping", u, resp.StatusCode)
+			continue
+		}
+		if resp.StatusCode != 200 {
+			return nil, fmt.Errorf("properties: %s returned %d", u, resp.StatusCode)
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("properties: %s error reading response. %s", u, err)
+		}
+
+		ct := resp.Header.Get("Content-Type")
+		var enc Encoding
+		switch strings.ToLower(ct) {
+		case "text/plain", "text/plain; charset=iso-8859-1", "text/plain; charset=latin1":
+			enc = ISO_8859_1
+		case "", "text/plain; charset=utf-8":
+			enc = UTF8
+		default:
+			return nil, fmt.Errorf("properties: invalid content type %s", ct)
+		}
+
+		buf.WriteString(convert(body, enc))
+		buf.WriteRune('\n')
+	}
+	return loadBuf(buf.Bytes(), UTF8)
 }
 
 func must(p *Properties, err error) *Properties {
