@@ -1,5 +1,9 @@
 ## Changelog
 
+### [1.6.1](https://github.com/magiconair/properties/tags/v1.6.1) - unreleased
+
+ * [Issue #11](https://github.com/magiconair/properties/issues/11): Add [LoadString](http://godoc.org/github.com/magiconair/properties#Properties.LoadString) method to load properties from an UTF8 string.
+
 ### [1.6.0](https://github.com/magiconair/properties/tags/v1.6.0) - 11 Dec 2015
 
  * Add [Decode](http://godoc.org/github.com/magiconair/properties#Properties.Decode) method to populate struct from properties via tags.

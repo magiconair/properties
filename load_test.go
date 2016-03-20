@@ -17,11 +17,7 @@ type LoadSuite struct {
 	tempFiles []string
 }
 
-var (
-	_ = Suite(&LoadSuite{})
-)
-
-// ----------------------------------------------------------------------------
+var _ = Suite(&LoadSuite{})
 
 func (s *LoadSuite) TestLoadFailsWithNotExistingFile(c *C) {
 	_, err := LoadFile("doesnotexist.properties", ISO_8859_1)
@@ -29,15 +25,11 @@ func (s *LoadSuite) TestLoadFailsWithNotExistingFile(c *C) {
 	c.Assert(err, ErrorMatches, "open.*no such file or directory")
 }
 
-// ----------------------------------------------------------------------------
-
 func (s *LoadSuite) TestLoadFilesFailsOnNotExistingFile(c *C) {
 	_, err := LoadFiles([]string{"doesnotexist.properties"}, ISO_8859_1, false)
 	c.Assert(err, NotNil)
 	c.Assert(err, ErrorMatches, "open.*no such file or directory")
 }
-
-// ----------------------------------------------------------------------------
 
 func (s *LoadSuite) TestLoadFilesDoesNotFailOnNotExistingFileAndIgnoreMissing(c *C) {
 	p, err := LoadFiles([]string{"doesnotexist.properties"}, ISO_8859_1, true)
@@ -45,17 +37,20 @@ func (s *LoadSuite) TestLoadFilesDoesNotFailOnNotExistingFileAndIgnoreMissing(c 
 	c.Assert(p.Len(), Equals, 0)
 }
 
-// ----------------------------------------------------------------------------
+func (s *LoadSuite) TestLoadString(c *C) {
+	x := "key=äüö"
+	p1 := MustLoadString(x)
+	p2 := must(Load([]byte(x), UTF8))
+	c.Assert(p1, DeepEquals, p2)
+}
 
-func (s *LoadSuite) TestLoad(c *C) {
+func (s *LoadSuite) TestLoadFile(c *C) {
 	filename := s.makeFile(c, "key=value")
 	p := MustLoadFile(filename, ISO_8859_1)
 
 	c.Assert(p.Len(), Equals, 1)
 	assertKeyValues(c, "", p, "key", "value")
 }
-
-// ----------------------------------------------------------------------------
 
 func (s *LoadSuite) TestLoadFiles(c *C) {
 	filename := s.makeFile(c, "key=value")
@@ -64,16 +59,12 @@ func (s *LoadSuite) TestLoadFiles(c *C) {
 	assertKeyValues(c, "", p, "key", "value", "key2", "value2")
 }
 
-// ----------------------------------------------------------------------------
-
 func (s *LoadSuite) TestLoadExpandedFile(c *C) {
 	filename := s.makeFilePrefix(c, os.Getenv("USER"), "key=value")
 	filename = strings.Replace(filename, os.Getenv("USER"), "${USER}", -1)
 	p := MustLoadFile(filename, ISO_8859_1)
 	assertKeyValues(c, "", p, "key", "value")
 }
-
-// ----------------------------------------------------------------------------
 
 func (s *LoadSuite) TestLoadFilesAndIgnoreMissing(c *C) {
 	filename := s.makeFile(c, "key=value")
@@ -82,13 +73,9 @@ func (s *LoadSuite) TestLoadFilesAndIgnoreMissing(c *C) {
 	assertKeyValues(c, "", p, "key", "value", "key2", "value2")
 }
 
-// ----------------------------------------------------------------------------
-
 func (s *LoadSuite) SetUpSuite(c *C) {
 	s.tempFiles = make([]string, 0)
 }
-
-// ----------------------------------------------------------------------------
 
 func (s *LoadSuite) TearDownSuite(c *C) {
 	for _, path := range s.tempFiles {
@@ -99,13 +86,9 @@ func (s *LoadSuite) TearDownSuite(c *C) {
 	}
 }
 
-// ----------------------------------------------------------------------------
-
 func (s *LoadSuite) makeFile(c *C, data string) string {
 	return s.makeFilePrefix(c, "properties", data)
 }
-
-// ----------------------------------------------------------------------------
 
 func (s *LoadSuite) makeFilePrefix(c *C, prefix, data string) string {
 	f, err := ioutil.TempFile("", prefix)

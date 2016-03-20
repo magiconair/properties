@@ -26,6 +26,11 @@ func Load(buf []byte, enc Encoding) (*Properties, error) {
 	return loadBuf(buf, enc)
 }
 
+// LoadString reads an UTF8 string into a properties struct.
+func LoadString(s string) (*Properties, error) {
+	return loadBuf([]byte(s), UTF8)
+}
+
 // LoadFile reads a file into a Properties struct.
 func LoadFile(filename string, enc Encoding) (*Properties, error) {
 	return loadFiles([]string{filename}, enc, false)
@@ -38,27 +43,30 @@ func LoadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Propertie
 	return loadFiles(filenames, enc, ignoreMissing)
 }
 
+// MustLoadString reads an UTF8 string into a Properties struct and
+// panics on error.
+func MustLoadString(s string) *Properties {
+	return must(LoadString(s))
+}
+
 // MustLoadFile reads a file into a Properties struct and
 // panics on error.
 func MustLoadFile(filename string, enc Encoding) *Properties {
-	return mustLoadFiles([]string{filename}, enc, false)
+	return must(LoadFile(filename, enc))
 }
 
 // MustLoadFiles reads multiple files in the given order into
 // a Properties struct and panics on error. If 'ignoreMissing'
 // is true then non-existent files will not be reported as error.
 func MustLoadFiles(filenames []string, enc Encoding, ignoreMissing bool) *Properties {
-	return mustLoadFiles(filenames, enc, ignoreMissing)
+	return must(LoadFiles(filenames, enc, ignoreMissing))
 }
-
-// ----------------------------------------------------------------------------
 
 func loadBuf(buf []byte, enc Encoding) (*Properties, error) {
 	p, err := parse(convert(buf, enc))
 	if err != nil {
 		return nil, err
 	}
-
 	return p, p.check()
 }
 
@@ -88,8 +96,7 @@ func loadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Propertie
 	return loadBuf(buff, enc)
 }
 
-func mustLoadFiles(filenames []string, enc Encoding, ignoreMissing bool) *Properties {
-	p, err := loadFiles(filenames, enc, ignoreMissing)
+func must(p *Properties, err error) *Properties {
 	if err != nil {
 		ErrorHandler(err)
 	}
