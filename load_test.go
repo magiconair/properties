@@ -89,23 +89,6 @@ func (s *LoadSuite) TestLoadURLs(c *C) {
 	assertKeyValues(c, "", p, "key", "value", "key2", "value2")
 }
 
-func (s *LoadSuite) TestLoadResource(c *C) {
-	srv := testServer()
-	defer srv.Close()
-	p := MustLoadResource(srv.URL + "/a", UTF8)
-	assertKeyValues(c, "", p, "key", "value")
-}
-
-func (s *LoadSuite) TestLoadResources(c *C) {
-	filename := s.makeFile(c, "key=value")
-	filename2 := s.makeFile(c, "key2=value3")
-	filename3 := s.makeFile(c, "key=value4")
-	srv := testServer()
-	defer srv.Close()
-	p := MustLoadResources([]string{filename, filename2, srv.URL + "/a", srv.URL + "/b", filename3}, UTF8, false)
-	assertKeyValues(c, "", p, "key", "value4", "key2", "value2")
-}
-
 func (s *LoadSuite) TestLoadURLsAndFailMissing(c *C) {
 	srv := testServer()
 	defer srv.Close()
