@@ -652,6 +652,16 @@ func (p *Properties) expand(input string) (string, error) {
 	return expand(input, make(map[string]bool), p.Prefix, p.Postfix, p.m)
 }
 
+func (p *Properties) merge(other *Properties) {
+	for k,v := range other.m {
+		p.m[k] = v
+	}
+	for k,v := range other.c {
+		p.c[k] = v
+	}
+	p.k = append(p.k, other.k...)
+}
+
 // expand recursively expands expressions of '(prefix)key(postfix)' to their corresponding values.
 // The function keeps track of the keys that were already expanded and stops if it
 // detects a circular reference or a malformed expression of the form '(prefix)key'.
