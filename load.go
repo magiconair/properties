@@ -137,7 +137,7 @@ func loadAll(names []string, enc Encoding, ignoreMissing bool) (*Properties, err
 		if err != nil {
 			return nil, err
 		}
-		result.merge(p)
+		result.Merge(p)
 
 	}
 	return result, result.check()

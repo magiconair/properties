@@ -630,6 +630,26 @@ func (p *Properties) Delete(key string) {
 	p.k = newKeys
 }
 
+// Merge merges properties, comments and keys from other *Properties into p
+func (p *Properties) Merge(other *Properties) {
+	for k,v := range other.m {
+		p.m[k] = v
+	}
+	for k,v := range other.c {
+		p.c[k] = v
+	}
+
+	outer:
+	for _, otherKey := range other.k {
+		for _, key := range p.k {
+			if otherKey == key {
+				continue outer
+			}
+		}
+		p.k = append(p.k, otherKey)
+	}
+}
+
 // ----------------------------------------------------------------------------
 
 // check expands all values and returns an error if a circular reference or
@@ -650,16 +670,6 @@ func (p *Properties) expand(input string) (string, error) {
 	}
 
 	return expand(input, make(map[string]bool), p.Prefix, p.Postfix, p.m)
-}
-
-func (p *Properties) merge(other *Properties) {
-	for k,v := range other.m {
-		p.m[k] = v
-	}
-	for k,v := range other.c {
-		p.c[k] = v
-	}
-	p.k = append(p.k, other.k...)
 }
 
 // expand recursively expands expressions of '(prefix)key(postfix)' to their corresponding values.
