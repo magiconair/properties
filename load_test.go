@@ -62,8 +62,9 @@ func (s *LoadSuite) TestLoadFiles(c *C) {
 }
 
 func (s *LoadSuite) TestLoadExpandedFile(c *C) {
-	filename := s.makeFilePrefix(c, os.Getenv("USER"), "key=value")
-	filename = strings.Replace(filename, os.Getenv("USER"), "${USER}", -1)
+	os.Setenv("_VARX", "some-value")
+	filename := s.makeFilePrefix(c, os.Getenv("_VARX"), "key=value")
+	filename = strings.Replace(filename, os.Getenv("_VARX"), "${_VARX}", -1)
 	p := MustLoadFile(filename, ISO_8859_1)
 	assertKeyValues(c, "", p, "key", "value")
 }
