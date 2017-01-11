@@ -827,6 +827,8 @@ func (s *TestSuite) TestDeleteKey(c *C) {
 	c.Check(len(p.m), Equals, 1)
 	c.Check(len(p.c), Equals, 0)
 	c.Check(len(p.k), Equals, 1)
+	c.Assert(p.k[0], Equals, "second")
+	c.Assert(p.m["second"], Equals, "key")
 }
 
 func (s *TestSuite) TestDeleteUnknownKey(c *C) {
