@@ -3,6 +3,7 @@
 ### Unreleased
 
  * [PR #16](https://github.com/magiconair/properties/pull/16): Keep gofmt happy
+ * [PR #18](https://github.com/magiconair/properties/pull/18): Fix Delete() function
 
 ### [1.7.0](https://github.com/magiconair/properties/tags/v1.7.0) - 20 Mar 2016
 
