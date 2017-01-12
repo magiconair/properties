@@ -66,7 +66,9 @@ func TestLoadExpandedFile(t *testing.T) {
 	tf := make(tempFiles, 0)
 	defer tf.removeAll()
 
-	os.Setenv("_VARX", "some-value")
+	if err := os.Setenv("_VARX", "some-value"); err != nil {
+		t.Fatal(err)
+	}
 	filename := tf.makeFilePrefix(os.Getenv("_VARX"), "key=value")
 	filename = strings.Replace(filename, os.Getenv("_VARX"), "${_VARX}", -1)
 	p := MustLoadFile(filename, ISO_8859_1)
@@ -189,7 +191,9 @@ func testServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		send := func(data []byte, contentType string) {
 			w.Header().Set("Content-Type", contentType)
-			w.Write(data)
+			if _, err := w.Write(data); err != nil {
+				panic(err)
+			}
 		}
 
 		utf8 := []byte("key=äöü")

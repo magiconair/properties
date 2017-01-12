@@ -452,8 +452,8 @@ func TestDisableExpansion(t *testing.T) {
 	assert.Equal(t, p.MustGet("key2"), "${key}")
 
 	// with expansion disabled we can introduce circular references
-	p.Set("keyA", "${keyB}")
-	p.Set("keyB", "${keyA}")
+	p.MustSet("keyA", "${keyB}")
+	p.MustSet("keyB", "${keyA}")
 	assert.Equal(t, p.MustGet("keyA"), "${keyB}")
 	assert.Equal(t, p.MustGet("keyB"), "${keyA}")
 }
@@ -662,6 +662,22 @@ func TestFilter(t *testing.T) {
 
 func TestFilterPrefix(t *testing.T) {
 	for _, test := range filterPrefixTests {
+		p := mustParse(t, test.input)
+		pp := p.FilterPrefix(test.prefix)
+		assert.Equal(t, pp != nil, true, "want properties")
+		assert.Equal(t, pp.Len(), len(test.keys))
+		for _, key := range test.keys {
+			v1, ok1 := p.Get(key)
+			v2, ok2 := pp.Get(key)
+			assert.Equal(t, ok1, true)
+			assert.Equal(t, ok2, true)
+			assert.Equal(t, v1, v2)
+		}
+	}
+}
+
+func TestFilterStripPrefix(t *testing.T) {
+	for _, test := range filterStripPrefixTests {
 		p := mustParse(t, test.input)
 		pp := p.FilterPrefix(test.prefix)
 		assert.Equal(t, pp != nil, true, "want properties")
