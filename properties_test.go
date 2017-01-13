@@ -725,6 +725,65 @@ func TestMustSet(t *testing.T) {
 	assert.Panic(t, func() { p.MustSet("key", "${key}") }, "circular reference .*")
 }
 
+func TestSetBool(t *testing.T) {
+	p := NewProperties()
+	err := p.SetBool("a", true)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, p.GetString("a", ""), "true")
+	err = p.SetBool("b", false)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, p.GetString("b", ""), "false")
+}
+
+func TestSetDuration(t *testing.T) {
+	p := NewProperties()
+	err := p.SetDuration("a", 5*time.Second)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, p.GetString("a", ""), "5s")
+}
+
+func TestSetFloat64(t *testing.T) {
+	p := NewProperties()
+	err := p.SetFloat64("a", 123.456)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, p.GetString("a", ""), "123.456")
+}
+
+func TestSetInt(t *testing.T) {
+	p := NewProperties()
+	err := p.SetInt("a", 123)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, p.GetString("a", ""), "123")
+}
+
+func TestSetInt64(t *testing.T) {
+	p := NewProperties()
+	err := p.SetInt64("a", 123)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, p.GetString("a", ""), "123")
+}
+
+func TestSetString(t *testing.T) {
+	p := NewProperties()
+	err := p.SetString("a", "b")
+	assert.Equal(t, err, nil)
+	assert.Equal(t, p.GetString("a", ""), "b")
+}
+
+func TestSetUint(t *testing.T) {
+	p := NewProperties()
+	err := p.SetUint("a", 123)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, p.GetString("a", ""), "123")
+}
+
+func TestSetUint64(t *testing.T) {
+	p := NewProperties()
+	err := p.SetUint64("a", 123)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, p.GetString("a", ""), "123")
+}
+
 func TestWrite(t *testing.T) {
 	for _, test := range writeTests {
 		p, err := parse(test.input)

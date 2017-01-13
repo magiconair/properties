@@ -553,6 +553,52 @@ func (p *Properties) MustSet(key, value string) (prev string, ok bool) {
 	return prev, ok
 }
 
+func (p *Properties) set(key string, value interface{}) error {
+	_, _, err := p.Set(key, fmt.Sprintf("%v", value))
+	return err
+}
+
+// SetBool sets the property key to the string representation of the value.
+func (p *Properties) SetBool(key string, value bool) error {
+	return p.set(key, value)
+}
+
+// SetDuration sets the property key to the string representation of the value.
+func (p *Properties) SetDuration(key string, value time.Duration) error {
+	return p.set(key, value)
+}
+
+// SetFloat64 sets the property key to the string representation of the value.
+func (p *Properties) SetFloat64(key string, value float64) error {
+	return p.set(key, value)
+}
+
+// SetInt sets the property key to the string representation of the value.
+func (p *Properties) SetInt(key string, value int) error {
+	return p.set(key, value)
+}
+
+// SetInt64 sets the property key to the string representation of the value.
+func (p *Properties) SetInt64(key string, value int64) error {
+	return p.set(key, value)
+}
+
+// SetString sets the property key to the value.
+func (p *Properties) SetString(key string, value string) error {
+	_, _, err := p.Set(key, value)
+	return err
+}
+
+// SetUint sets the property key to the string representation of the value.
+func (p *Properties) SetUint(key string, value uint) error {
+	return p.set(key, value)
+}
+
+// SetUint64 sets the property key to the string representation of the value.
+func (p *Properties) SetUint64(key string, value uint64) error {
+	return p.set(key, value)
+}
+
 // String returns a string of all expanded 'key = value' pairs.
 func (p *Properties) String() string {
 	var s string
