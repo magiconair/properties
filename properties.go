@@ -622,7 +622,7 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 	return
 }
 
-// ToMap returns a copy of the properties as a map
+// ToMap returns a copy of the properties as a map.
 func (p *Properties) ToMap() map[string]string {
 	m := make(map[string]string)
 	for k, v := range p.m {
