@@ -825,6 +825,30 @@ func TestMerge(t *testing.T) {
 	assert.Equal(t, p1.MustGet("key"), "another value")
 	assert.Equal(t, p1.GetComment("key"), "another comment")
 }
+func TestToMap(t *testing.T) {
+	input := "key=value\nabc=def"
+	p := mustParse(t, input)
+	m := map[string]string{"key": "value", "abc": "def"}
+	assert.Equal(t, p.ToMap(), m)
+}
+
+func TestFilterFunc(t *testing.T) {
+	i := "event1 = listener1\nevent2 = listener2"
+	input := mustParse(t, i)
+	input.Set("event3", "listener3")
+	input.Set("event4", "listener4")
+	otherMap := make(map[string]string)
+	otherMap["event1"] = "listener1"
+	otherMap["event2"] = "listener2"
+	assert.Equal(t, input.FilterFunc(func(k, v string) bool {
+		if k == "event1" || k == "event2" {
+			return true
+		} else {
+			return false
+
+		}
+	}).ToMap(), otherMap)
+}
 
 // ----------------------------------------------------------------------------
 

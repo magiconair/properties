@@ -622,6 +622,33 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 	return
 }
 
+// ToMap returns a copy of the properties as a map - useful when users of library are themselves
+// building a library and do not want inner datastructures be exposed to their clients
+// E.g. `Properties` as a return type in library which is using magiconair Properties is not suitable.
+func (p *Properties) ToMap() map[string]string {
+	m := make(map[string]string)
+	for k, v := range p.m {
+		m[k] = v
+	}
+	return m
+}
+
+/// FilterFunc returns a copy of the properties which includes the values
+// which passed all filters.
+func (p *Properties) FilterFunc(filters ...func(k, v string) bool) *Properties {
+	pp := NewProperties()
+outer:
+	for k, v := range p.m {
+		for _, f := range filters {
+			if !f(k, v) {
+				continue outer
+			}
+			pp.Set(k, v)
+		}
+	}
+	return pp
+}
+
 // ----------------------------------------------------------------------------
 
 // Delete removes the key and its comments.
