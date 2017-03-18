@@ -622,9 +622,7 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 	return
 }
 
-// ToMap returns a copy of the properties as a map - useful when users of library are themselves
-// building a library and do not want inner datastructures be exposed to their clients
-// E.g. `Properties` as a return type in library which is using magiconair Properties is not suitable.
+// ToMap returns a copy of the properties as a map
 func (p *Properties) ToMap() map[string]string {
 	m := make(map[string]string)
 	for k, v := range p.m {

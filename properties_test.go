@@ -833,21 +833,13 @@ func TestToMap(t *testing.T) {
 }
 
 func TestFilterFunc(t *testing.T) {
-	i := "event1 = listener1\nevent2 = listener2"
-	input := mustParse(t, i)
-	input.Set("event3", "listener3")
-	input.Set("event4", "listener4")
-	otherMap := make(map[string]string)
-	otherMap["event1"] = "listener1"
-	otherMap["event2"] = "listener2"
-	assert.Equal(t, input.FilterFunc(func(k, v string) bool {
-		if k == "event1" || k == "event2" {
-			return true
-		} else {
-			return false
-
-		}
-	}).ToMap(), otherMap)
+	input := "key=value\nabc=def"
+	p := mustParse(t, input)
+	pp := p.FilterFunc(func(k, v string) bool {
+		return k != "abc"
+	})
+	m := map[string]string{"key": "value"}
+	assert.Equal(t, pp.ToMap(), m)
 }
 
 // ----------------------------------------------------------------------------
