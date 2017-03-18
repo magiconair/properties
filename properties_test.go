@@ -825,25 +825,14 @@ func TestMerge(t *testing.T) {
 	assert.Equal(t, p1.MustGet("key"), "another value")
 	assert.Equal(t, p1.GetComment("key"), "another comment")
 }
-
-func TestProperties_ToMap(t *testing.T) {
-	i := "key = value\nkey2 = ghi"
-	input := mustParse(t, i)
-	input.Set("event1", "listener1")
-	input.Set("event2", "listener2")
-	input.Set("event3", "listener3")
-	input.Set("event4", "listener4")
-	otherMap := make(map[string]string)
-	otherMap["event1"] = "listener1"
-	otherMap["event2"] = "listener2"
-	otherMap["event3"] = "listener3"
-	otherMap["event4"] = "listener4"
-	otherMap["key"] = "value"
-	otherMap["key2"] = "ghi"
-	assert.Equal(t, input.ToMap(), otherMap)
+func TestToMap(t *testing.T) {
+	input := "key=value\nabc=def"
+	p := mustParse(t, input)
+	m := map[string]string{"key": "value", "abc": "def"}
+	assert.Equal(t, p.ToMap(), m)
 }
 
-func TestProperties_ToMapWith(t *testing.T) {
+func TestFilterFunc(t *testing.T) {
 	i := "event1 = listener1\nevent2 = listener2"
 	input := mustParse(t, i)
 	input.Set("event3", "listener3")
@@ -851,17 +840,14 @@ func TestProperties_ToMapWith(t *testing.T) {
 	otherMap := make(map[string]string)
 	otherMap["event1"] = "listener1"
 	otherMap["event2"] = "listener2"
-	otherMap["event3"] = "listener3"
-	otherMap["event4"] = "listener4"
-	assert.Equal(t, input.ToMapWith(func(iMap map[string]string) map[string]string {
-		rmap := make(map[string]string)
-		for k, v := range iMap {
-			if k != "key" || k != "key2" {
-				rmap[k] = v
-			}
+	assert.Equal(t, input.FilterFunc(func(k, v string) bool {
+		if k == "event1" || k == "event2" {
+			return true
+		} else {
+			return false
+
 		}
-		return rmap
-	}), otherMap)
+	}).ToMap(), otherMap)
 }
 
 // ----------------------------------------------------------------------------
