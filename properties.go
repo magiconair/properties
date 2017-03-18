@@ -17,7 +17,6 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
-	"github.com/magiconair/properties"
 )
 
 // ErrorHandlerFunc defines the type of function which handles failures
@@ -569,23 +568,23 @@ func (p *Properties) String() string {
 func (p *Properties) ToMap() (map[string]string, error) {
 	buffer := make(map[string]string)
 	for _, key := range p.Keys() {
-		buffer[key] = p[key]
+		buffer[key] = p.GetString(key, "")
 	}
-	return buffer
+	return buffer, nil
 }
 
 // Transforms properties to a map but with application of series of filters provided by user
 // See `ToMap` for more simple explanation.
-func (p *Properties) ToMapWithFilters(filters ... func(Properties) Properties) (map[string]string, error) {
-	var filteredProperties properties.Properties
+func (p *Properties) ToMapWithFilters(filters ... func(*Properties) *Properties) (map[string]string, error) {
+	var filteredProperties *Properties
 	for _, f := range filters {
 		filteredProperties = f(p)
 	}
 	buffer := make(map[string]string)
 	for _, key := range filteredProperties.Keys() {
-		buffer[key] = filteredProperties[key]
+		buffer[key] = filteredProperties.GetString(key, "")
 	}
-	return buffer
+	return buffer,nil
 }
 
 // Write writes all unexpanded 'key = value' pairs to the given writer.
