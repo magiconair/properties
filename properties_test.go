@@ -8,14 +8,13 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/magiconair/properties/assert"
 	"math"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/magiconair/properties/assert"
 )
 
 var verbose = flag.Bool("verbose", false, "Verbose output")
@@ -462,7 +461,9 @@ func TestMustGet(t *testing.T) {
 	input := "key = value\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGet("key"), "value")
-	assert.Panic(t, func() { p.MustGet("invalid") }, "unknown property: invalid")
+	assert.Panic(t, func() {
+		p.MustGet("invalid")
+	}, "unknown property: invalid")
 }
 
 func TestGetBool(t *testing.T) {
@@ -477,7 +478,9 @@ func TestMustGetBool(t *testing.T) {
 	input := "key = true\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetBool("key"), true)
-	assert.Panic(t, func() { p.MustGetBool("invalid") }, "unknown property: invalid")
+	assert.Panic(t, func() {
+		p.MustGetBool("invalid")
+	}, "unknown property: invalid")
 }
 
 func TestGetDuration(t *testing.T) {
@@ -492,8 +495,12 @@ func TestMustGetDuration(t *testing.T) {
 	input := "key = 123\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetDuration("key"), time.Duration(123))
-	assert.Panic(t, func() { p.MustGetDuration("key2") }, "strconv.ParseInt: parsing.*")
-	assert.Panic(t, func() { p.MustGetDuration("invalid") }, "unknown property: invalid")
+	assert.Panic(t, func() {
+		p.MustGetDuration("key2")
+	}, "strconv.ParseInt: parsing.*")
+	assert.Panic(t, func() {
+		p.MustGetDuration("invalid")
+	}, "unknown property: invalid")
 }
 
 func TestGetParsedDuration(t *testing.T) {
@@ -508,8 +515,12 @@ func TestMustGetParsedDuration(t *testing.T) {
 	input := "key = 123ms\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetParsedDuration("key"), 123*time.Millisecond)
-	assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, "time: invalid duration ghi")
-	assert.Panic(t, func() { p.MustGetParsedDuration("invalid") }, "unknown property: invalid")
+	assert.Panic(t, func() {
+		p.MustGetParsedDuration("key2")
+	}, "time: invalid duration ghi")
+	assert.Panic(t, func() {
+		p.MustGetParsedDuration("invalid")
+	}, "unknown property: invalid")
 }
 
 func TestGetFloat64(t *testing.T) {
@@ -524,8 +535,12 @@ func TestMustGetFloat64(t *testing.T) {
 	input := "key = 123\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetFloat64("key"), float64(123))
-	assert.Panic(t, func() { p.MustGetFloat64("key2") }, "strconv.ParseFloat: parsing.*")
-	assert.Panic(t, func() { p.MustGetFloat64("invalid") }, "unknown property: invalid")
+	assert.Panic(t, func() {
+		p.MustGetFloat64("key2")
+	}, "strconv.ParseFloat: parsing.*")
+	assert.Panic(t, func() {
+		p.MustGetFloat64("invalid")
+	}, "unknown property: invalid")
 }
 
 func TestGetInt(t *testing.T) {
@@ -540,8 +555,12 @@ func TestMustGetInt(t *testing.T) {
 	input := "key = 123\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetInt("key"), int(123))
-	assert.Panic(t, func() { p.MustGetInt("key2") }, "strconv.ParseInt: parsing.*")
-	assert.Panic(t, func() { p.MustGetInt("invalid") }, "unknown property: invalid")
+	assert.Panic(t, func() {
+		p.MustGetInt("key2")
+	}, "strconv.ParseInt: parsing.*")
+	assert.Panic(t, func() {
+		p.MustGetInt("invalid")
+	}, "unknown property: invalid")
 }
 
 func TestGetInt64(t *testing.T) {
@@ -556,8 +575,12 @@ func TestMustGetInt64(t *testing.T) {
 	input := "key = 123\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetInt64("key"), int64(123))
-	assert.Panic(t, func() { p.MustGetInt64("key2") }, "strconv.ParseInt: parsing.*")
-	assert.Panic(t, func() { p.MustGetInt64("invalid") }, "unknown property: invalid")
+	assert.Panic(t, func() {
+		p.MustGetInt64("key2")
+	}, "strconv.ParseInt: parsing.*")
+	assert.Panic(t, func() {
+		p.MustGetInt64("invalid")
+	}, "unknown property: invalid")
 }
 
 func TestGetUint(t *testing.T) {
@@ -572,8 +595,12 @@ func TestMustGetUint(t *testing.T) {
 	input := "key = 123\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetUint("key"), uint(123))
-	assert.Panic(t, func() { p.MustGetUint64("key2") }, "strconv.ParseUint: parsing.*")
-	assert.Panic(t, func() { p.MustGetUint64("invalid") }, "unknown property: invalid")
+	assert.Panic(t, func() {
+		p.MustGetUint64("key2")
+	}, "strconv.ParseUint: parsing.*")
+	assert.Panic(t, func() {
+		p.MustGetUint64("invalid")
+	}, "unknown property: invalid")
 }
 
 func TestGetUint64(t *testing.T) {
@@ -588,8 +615,12 @@ func TestMustGetUint64(t *testing.T) {
 	input := "key = 123\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetUint64("key"), uint64(123))
-	assert.Panic(t, func() { p.MustGetUint64("key2") }, "strconv.ParseUint: parsing.*")
-	assert.Panic(t, func() { p.MustGetUint64("invalid") }, "unknown property: invalid")
+	assert.Panic(t, func() {
+		p.MustGetUint64("key2")
+	}, "strconv.ParseUint: parsing.*")
+	assert.Panic(t, func() {
+		p.MustGetUint64("invalid")
+	}, "unknown property: invalid")
 }
 
 func TestGetString(t *testing.T) {
@@ -604,7 +635,9 @@ func TestMustGetString(t *testing.T) {
 	input := `key = value`
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetString("key"), "value")
-	assert.Panic(t, func() { p.MustGetString("invalid") }, "unknown property: invalid")
+	assert.Panic(t, func() {
+		p.MustGetString("invalid")
+	}, "unknown property: invalid")
 }
 
 func TestComment(t *testing.T) {
@@ -722,7 +755,9 @@ func TestSet(t *testing.T) {
 func TestMustSet(t *testing.T) {
 	input := "key=${key}"
 	p := mustParse(t, input)
-	assert.Panic(t, func() { p.MustSet("key", "${key}") }, "circular reference .*")
+	assert.Panic(t, func() {
+		p.MustSet("key", "${key}")
+	}, "circular reference .*")
 }
 
 func TestWrite(t *testing.T) {
@@ -774,8 +809,12 @@ func TestPanicOn32BitIntOverflow(t *testing.T) {
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetInt64("min"), min)
 	assert.Equal(t, p.MustGetInt64("max"), max)
-	assert.Panic(t, func() { p.MustGetInt("min") }, ".* out of range")
-	assert.Panic(t, func() { p.MustGetInt("max") }, ".* out of range")
+	assert.Panic(t, func() {
+		p.MustGetInt("min")
+	}, ".* out of range")
+	assert.Panic(t, func() {
+		p.MustGetInt("max")
+	}, ".* out of range")
 }
 
 func TestPanicOn32BitUintOverflow(t *testing.T) {
@@ -784,7 +823,9 @@ func TestPanicOn32BitUintOverflow(t *testing.T) {
 	input := fmt.Sprintf("max=%d", max)
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetUint64("max"), max)
-	assert.Panic(t, func() { p.MustGetUint("max") }, ".* out of range")
+	assert.Panic(t, func() {
+		p.MustGetUint("max")
+	}, ".* out of range")
 }
 
 func TestDeleteKey(t *testing.T) {
@@ -824,6 +865,44 @@ func TestMerge(t *testing.T) {
 	assert.Equal(t, len(p1.k), 3)
 	assert.Equal(t, p1.MustGet("key"), "another value")
 	assert.Equal(t, p1.GetComment("key"), "another comment")
+}
+
+func TestProperties_ToMap(t *testing.T) {
+	i := "key = value\nkey2 = ghi"
+	input := mustParse(t, i)
+	input.Set("event1", "listener1")
+	input.Set("event2", "listener2")
+	input.Set("event3", "listener3")
+	input.Set("event4", "listener4")
+	otherMap := make(map[string]string)
+	otherMap["event1"] = "listener1"
+	otherMap["event2"] = "listener2"
+	otherMap["event3"] = "listener3"
+	otherMap["event4"] = "listener4"
+	otherMap["key"] = "value"
+	otherMap["key2"] = "ghi"
+	assert.Equal(t, input.ToMap(), otherMap)
+}
+
+func TestProperties_ToMapWith(t *testing.T) {
+	i := "event1 = listener1\nevent2 = listener2"
+	input := mustParse(t, i)
+	input.Set("event3", "listener3")
+	input.Set("event4", "listener4")
+	otherMap := make(map[string]string)
+	otherMap["event1"] = "listener1"
+	otherMap["event2"] = "listener2"
+	otherMap["event3"] = "listener3"
+	otherMap["event4"] = "listener4"
+	assert.Equal(t, input.ToMapWith(func(iMap map[string]string) map[string]string {
+		rmap := make(map[string]string)
+		for k, v := range iMap {
+			if k != "key" || k != "key2" {
+				rmap[k] = v
+			}
+		}
+		return rmap
+	}), otherMap)
 }
 
 // ----------------------------------------------------------------------------

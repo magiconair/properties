@@ -563,7 +563,7 @@ func (p *Properties) String() string {
 	return s
 }
 func (p *Properties) FMap(f func(*Properties) interface{}) interface{}{
-	return f(p)
+return f(p)
 }
 // Transforms properties to a map - useful when users of library are themselves
 // building a library and do not want inner datastructures be exposed to their clients
