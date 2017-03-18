@@ -50,8 +50,8 @@ func PanicHandler(err error) {
 // All values are stored in unexpanded form and are expanded at runtime
 type Properties struct {
 	// Pre-/Postfix for property expansion.
-	Prefix           string
-	Postfix          string
+	Prefix  string
+	Postfix string
 
 	// DisableExpansion controls the expansion of properties on Get()
 	// and the check for circular references on Set(). When set to
@@ -60,13 +60,13 @@ type Properties struct {
 	DisableExpansion bool
 
 	// Stores the key/value pairs
-	m                map[string]string
+	m map[string]string
 
 	// Stores the comments per key.
-	c                map[string][]string
+	c map[string][]string
 
 	// Stores the keys in order of appearance.
-	k                []string
+	k []string
 }
 
 // NewProperties creates a new Properties struct with the default
@@ -98,7 +98,7 @@ func (p *Properties) Get(key string) (value string, ok bool) {
 	// circular references and malformed expressions
 	// so we panic if we still get an error here.
 	if err != nil {
-		ErrorHandler(fmt.Errorf("%s in %q", err, key + " = " + v))
+		ErrorHandler(fmt.Errorf("%s in %q", err, key+" = "+v))
 	}
 
 	return expanded, true
@@ -129,7 +129,7 @@ func (p *Properties) GetComment(key string) string {
 	if !ok || len(comments) == 0 {
 		return ""
 	}
-	return comments[len(comments) - 1]
+	return comments[len(comments)-1]
 }
 
 // ----------------------------------------------------------------------------
@@ -562,23 +562,25 @@ func (p *Properties) String() string {
 	}
 	return s
 }
-func (p *Properties) FMap(f func(*Properties) interface{}) interface{}{
-return f(p)
+func (p *Properties) FMap(f func(*Properties) interface{}) interface{} {
+	return f(p)
 }
+
 // Transforms properties to a map - useful when users of library are themselves
 // building a library and do not want inner datastructures be exposed to their clients
 // E.g. `Properties` as a return type in library which is using magiconair Properties is not suitable.
 func (p *Properties) ToMap() map[string]string {
 	buffer := make(map[string]string)
-	for k,v := range p.m {
+	for k, v := range p.m {
 		buffer[k] = v
 	}
 	return buffer
 }
+
 // Transforms properties to a map - useful when users of library are themselves
 // building a library and do not want inner datastructures be exposed to their clients
 // E.g. `Properties` as a return type in library which is using magiconair Properties is not suitable.
-func (p *Properties) ToMapWith(filters ... func(map[string]string) map[string]string) map[string]string {
+func (p *Properties) ToMapWith(filters ...func(map[string]string) map[string]string) map[string]string {
 	mapped := p.ToMap()
 	for _, f := range filters {
 		mapped = f(mapped)
@@ -669,7 +671,7 @@ func (p *Properties) Merge(other *Properties) {
 		p.c[k] = v
 	}
 
-	outer:
+outer:
 	for _, otherKey := range other.k {
 		for _, key := range p.k {
 			if otherKey == key {
@@ -718,7 +720,7 @@ func expand(s string, keys map[string]bool, prefix, postfix string, values map[s
 	}
 
 	end := keyStart + keyLen + len(postfix) - 1
-	key := s[keyStart : keyStart + keyLen]
+	key := s[keyStart : keyStart+keyLen]
 
 	// fmt.Printf("s:%q pp:%q start:%d end:%d keyStart:%d keyLen:%d key:%q\n", s, prefix + "..." + postfix, start, end, keyStart, keyLen, key)
 
@@ -734,7 +736,7 @@ func expand(s string, keys map[string]bool, prefix, postfix string, values map[s
 	// remember that we've seen the key
 	keys[key] = true
 
-	return expand(s[:start] + val + s[end + 1:], keys, prefix, postfix, values)
+	return expand(s[:start]+val+s[end+1:], keys, prefix, postfix, values)
 }
 
 // encode encodes a UTF-8 string to ISO-8859-1 and escapes some characters.
@@ -765,9 +767,9 @@ func encodeIso(s string, special string) string {
 	var v string
 	for pos := 0; pos < len(s); {
 		switch r, w = utf8.DecodeRuneInString(s[pos:]); {
-		case r < 1 << 8: // single byte rune -> escape special chars only
+		case r < 1<<8: // single byte rune -> escape special chars only
 			v += escape(r, special)
-		case r < 1 << 16: // two byte rune -> unicode literal
+		case r < 1<<16: // two byte rune -> unicode literal
 			v += fmt.Sprintf("\\u%04x", r)
 		default: // more than two bytes per rune -> can't encode
 			v += "?"
