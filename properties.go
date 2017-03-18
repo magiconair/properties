@@ -631,8 +631,7 @@ func (p *Properties) ToMap() map[string]string {
 	return m
 }
 
-/// FilterFunc returns a copy of the properties which includes the values
-// which passed all filters.
+// FilterFunc returns a copy of the properties which includes the values which passed all filters.
 func (p *Properties) FilterFunc(filters ...func(k, v string) bool) *Properties {
 	pp := NewProperties()
 outer:
