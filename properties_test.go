@@ -826,6 +826,23 @@ func TestMerge(t *testing.T) {
 	assert.Equal(t, p1.GetComment("key"), "another comment")
 }
 
+func TestMap(t *testing.T) {
+	input := "key=value\nabc=def"
+	p := mustParse(t, input)
+	m := map[string]string{"key": "value", "abc": "def"}
+	assert.Equal(t, p.Map(), m)
+}
+
+func TestFilterFunc(t *testing.T) {
+	input := "key=value\nabc=def"
+	p := mustParse(t, input)
+	pp := p.FilterFunc(func(k, v string) bool {
+		return k != "abc"
+	})
+	m := map[string]string{"key": "value"}
+	assert.Equal(t, pp.Map(), m)
+}
+
 // ----------------------------------------------------------------------------
 
 // tests all combinations of delimiters, leading and/or trailing whitespace and newlines.

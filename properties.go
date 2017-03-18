@@ -622,6 +622,30 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 	return
 }
 
+// Map returns a copy of the properties as a map.
+func (p *Properties) Map() map[string]string {
+	m := make(map[string]string)
+	for k, v := range p.m {
+		m[k] = v
+	}
+	return m
+}
+
+// FilterFunc returns a copy of the properties which includes the values which passed all filters.
+func (p *Properties) FilterFunc(filters ...func(k, v string) bool) *Properties {
+	pp := NewProperties()
+outer:
+	for k, v := range p.m {
+		for _, f := range filters {
+			if !f(k, v) {
+				continue outer
+			}
+			pp.Set(k, v)
+		}
+	}
+	return pp
+}
+
 // ----------------------------------------------------------------------------
 
 // Delete removes the key and its comments.
