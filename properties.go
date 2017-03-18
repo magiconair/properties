@@ -562,29 +562,28 @@ func (p *Properties) String() string {
 	}
 	return s
 }
+func (p *Properties) FMap(f func(*Properties) interface{}) interface{}{
+	return f(p)
+}
 // Transforms properties to a map - useful when users of library are themselves
 // building a library and do not want inner datastructures be exposed to their clients
 // E.g. `Properties` as a return type in library which is using magiconair Properties is not suitable.
-func (p *Properties) ToMap() (map[string]string, error) {
+func (p *Properties) ToMap() map[string]string {
 	buffer := make(map[string]string)
-	for _, key := range p.Keys() {
-		buffer[key] = p.GetString(key, "")
+	for k,v := range p.m {
+		buffer[k] = v
 	}
-	return buffer, nil
+	return buffer
 }
-
-// Transforms properties to a map but with application of series of filters provided by user
-// See `ToMap` for more simple explanation.
-func (p *Properties) ToMapWithFilters(filters ... func(*Properties) *Properties) (map[string]string, error) {
-	var filteredProperties *Properties
+// Transforms properties to a map - useful when users of library are themselves
+// building a library and do not want inner datastructures be exposed to their clients
+// E.g. `Properties` as a return type in library which is using magiconair Properties is not suitable.
+func (p *Properties) ToMapWith(filters ... func(map[string]string) map[string]string) map[string]string {
+	mapped := p.ToMap()
 	for _, f := range filters {
-		filteredProperties = f(p)
+		mapped = f(mapped)
 	}
-	buffer := make(map[string]string)
-	for _, key := range filteredProperties.Keys() {
-		buffer[key] = filteredProperties.GetString(key, "")
-	}
-	return buffer,nil
+	return mapped
 }
 
 // Write writes all unexpanded 'key = value' pairs to the given writer.
