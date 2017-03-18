@@ -825,6 +825,7 @@ func TestMerge(t *testing.T) {
 	assert.Equal(t, p1.MustGet("key"), "another value")
 	assert.Equal(t, p1.GetComment("key"), "another comment")
 }
+
 func TestToMap(t *testing.T) {
 	input := "key=value\nabc=def"
 	p := mustParse(t, input)
