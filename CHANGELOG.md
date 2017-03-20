@@ -3,7 +3,7 @@
 ### [1.7.2](https://github.com/magiconair/properties/tags/v1.7.2) - 20 Mar 2017
 
  * [Issue #15](https://github.com/magiconair/properties/issues/15): Drop gocheck dependency
- * [PR #21](https://github.com/magiconair/properties/pull/21): Add Map() and FilterFunc()
+ * [PR #21](https://github.com/magiconair/properties/pull/21): Add [Map()](http://godoc.org/github.com/magiconair/properties#Properties.Map) and [FilterFunc()](http://godoc.org/github.com/magiconair/properties#Properties.FilterFunc)
 
 ### [1.7.1](https://github.com/magiconair/properties/tags/v1.7.1) - 13 Jan 2017
 
