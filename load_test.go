@@ -42,10 +42,11 @@ func TestLoadString(t *testing.T) {
 }
 
 func TestLoadMap(t *testing.T) {
-	input := "key=value\nabc=def"
-	p := mustParse(t, input)
+	// LoadMap does not guarantee the same import order
+	// of keys every time since map access is randomized.
+	// Therefore, we need to compare the generated maps.
 	m := map[string]string{"key": "value", "abc": "def"}
-	assert.Equal(t, LoadMap(m), p)
+	assert.Equal(t, LoadMap(m).Map(), m)
 }
 
 func TestLoadFile(t *testing.T) {
