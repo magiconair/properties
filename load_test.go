@@ -41,6 +41,13 @@ func TestLoadString(t *testing.T) {
 	assert.Equal(t, p1, p2)
 }
 
+func TestLoadMap(t *testing.T) {
+	input := "key=value\nabc=def"
+	p := mustParse(t, input)
+	m := map[string]string{"key": "value", "abc": "def"}
+	assert.Equal(t, LoadMap(m), p)
+}
+
 func TestLoadFile(t *testing.T) {
 	tf := make(tempFiles, 0)
 	defer tf.removeAll()
