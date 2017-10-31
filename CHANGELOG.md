@@ -18,6 +18,8 @@
 
 ### [1.7.1](https://github.com/magiconair/properties/tree/v1.7.1) - 13 Jan 2017
 
+ * [Issue #14](https://github.com/magiconair/properties/issues/14): Decouple TestLoadExpandedFile from `$USER`
+ * [PR #12](https://github.com/magiconair/properties/pull/12): Load from files and URLs
  * [PR #16](https://github.com/magiconair/properties/pull/16): Keep gofmt happy
  * [PR #18](https://github.com/magiconair/properties/pull/18): Fix Delete() function
 
