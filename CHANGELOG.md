@@ -1,6 +1,6 @@
 ## Changelog
 
-### Unreleased
+### [1.7.4](https://github.com/magiconair/properties/tags/v1.7.4) - 31 Oct 2017
 
  * [Issue #23](https://github.com/magiconair/properties/issues/23): Ignore blank lines with whitespaces
  * [PR #24](https://github.com/magiconair/properties/pull/24): Update keys when DisableExpansion is enabled
