@@ -1,6 +1,28 @@
 Overview [![Build Status](https://travis-ci.org/magiconair/properties.svg?branch=master)](https://travis-ci.org/magiconair/properties)
 ========
 
+### Note: 18 Feb 2018
+
+I realized that all of the git tags I had pushed before v1.7.5 were lightweight tags
+and I've only recently learned that this doesn't play well with `git describe` 😞
+
+I have replaced all lightweight tags with signed tags using this script which should
+retain the commit date, name and email address. Worst case you have to reclone the repo.
+
+```shell
+#!/bin/bash
+tag=$1
+echo "Updating $tag"
+date=$(git show ${tag}^0 --format=%aD | head -1)
+email=$(git show ${tag}^0 --format=%aE | head -1)
+name=$(git show ${tag}^0 --format=%aN | head -1)
+GIT_COMMITTER_DATE="$date" GIT_COMMITTER_NAME="$name" GIT_COMMITTER_EMAIL="$email" git tag -s -f ${tag} ${tag}^0 -m ${tag}
+```
+
+I apologize for the inconvenience.
+
+Frank
+
 #### Current version: 1.7.5
 
 properties is a Go library for reading and writing properties files.
