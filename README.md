@@ -1,7 +1,7 @@
 Overview [![Build Status](https://travis-ci.org/magiconair/properties.svg?branch=master)](https://travis-ci.org/magiconair/properties)
 ========
 
-### Note: 18 Feb 2018
+### Note: 13 Feb 2018
 
 I realized that all of the git tags I had pushed before v1.7.5 were lightweight tags
 and I've only recently learned that this doesn't play well with `git describe` 😞
