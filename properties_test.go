@@ -90,6 +90,7 @@ var complexTests = [][]string{
 	{"key=value\nkey2=${key}bb", "key", "value", "key2", "valuebb"},
 	{"key=value\nkey2=aa${key}bb", "key", "value", "key2", "aavaluebb"},
 	{"key=value\nkey2=${key}\nkey3=${key2}", "key", "value", "key2", "value", "key3", "value"},
+	{"key=value\nkey2=${key}${key}", "key", "value", "key2", "valuevalue"},
 	{"key=${USER}", "key", os.Getenv("USER")},
 	{"key=${USER}\nUSER=value", "key", "value", "USER", "value"},
 }
