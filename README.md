@@ -1,8 +1,11 @@
-# Overview [![Build Status](https://travis-ci.org/magiconair/properties.svg?branch=master)](https://travis-ci.org/magiconair/properties)
+[![](https://img.shields.io/github/tag/magiconair/properties.svg?style=flat-square&label=release)](https://github.com/magiconair/properties/releases)
+[![Build Status](https://img.shields.io/travis/magiconair/properties.svg?branch=master&style=flat-square)](https://travis-ci.org/magiconair/properties)
+[![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg?style=flat-square)](https://raw.githubusercontent.com/magiconair/properties/master/LICENSE)
+[![GoDoc](http://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](http://godoc.org/github.com/magiconair/properties)
 
-Please run `git pull --tags` to update the tags. See [below](#updated-git-tags) why.
+# Overview
 
-#### Current version: 1.7.5
+#### Please run `git pull --tags` to update the tags. See [below](#updated-git-tags) why.
 
 properties is a Go library for reading and writing properties files.
 
