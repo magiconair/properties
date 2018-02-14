@@ -1,5 +1,13 @@
 ## Changelog
 
+### [1.7.6](https://github.com/magiconair/properties/tree/v1.7.6) - 14 Feb 2018
+
+ * [PR #29](https://github.com/magiconair/properties/pull/29): Reworked expansion logic to handle more complex cases.
+
+   See PR for an example.
+
+   Thanks to [@yobert](https://github.com/yobert) for the fix.
+
 ### [1.7.5](https://github.com/magiconair/properties/tree/v1.7.5) - 13 Feb 2018
 
  * [PR #28](https://github.com/magiconair/properties/pull/28): Support duplicate expansions in the same value
