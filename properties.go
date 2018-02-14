@@ -19,6 +19,8 @@ import (
 	"unicode/utf8"
 )
 
+const maxExpansionDepth = 64
+
 // ErrorHandlerFunc defines the type of function which handles failures
 // of the MustXXX() functions. An error handler function must exit
 // the application after handling the error.
@@ -710,42 +712,51 @@ func (p *Properties) expand(key, input string) (string, error) {
 		return input, nil
 	}
 
-	return expand(key, input, make(map[string]bool), p.Prefix, p.Postfix, p.m)
+	return expand(input, []string{key}, p.Prefix, p.Postfix, p.m)
 }
 
 // expand recursively expands expressions of '(prefix)key(postfix)' to their corresponding values.
 // The function keeps track of the keys that were already expanded and stops if it
 // detects a circular reference or a malformed expression of the form '(prefix)key'.
-func expand(originkey, s string, keys map[string]bool, prefix, postfix string, values map[string]string) (string, error) {
-	start := strings.Index(s, prefix)
-	if start == -1 {
-		return s, nil
+func expand(s string, keys []string, prefix, postfix string, values map[string]string) (string, error) {
+	if len(keys) > maxExpansionDepth {
+		return "", fmt.Errorf("expansion too deep")
 	}
 
-	keyStart := start + len(prefix)
-	keyLen := strings.Index(s[keyStart:], postfix)
-	if keyLen == -1 {
-		return "", fmt.Errorf("malformed expression")
+	for {
+		start := strings.Index(s, prefix)
+		if start == -1 {
+			return s, nil
+		}
+
+		keyStart := start + len(prefix)
+		keyLen := strings.Index(s[keyStart:], postfix)
+		if keyLen == -1 {
+			return "", fmt.Errorf("malformed expression")
+		}
+
+		end := keyStart + keyLen + len(postfix) - 1
+		key := s[keyStart : keyStart+keyLen]
+
+		// fmt.Printf("s:%q pp:%q start:%d end:%d keyStart:%d keyLen:%d key:%q\n", s, prefix + "..." + postfix, start, end, keyStart, keyLen, key)
+
+		for _, k := range keys {
+			if key == k {
+				return "", fmt.Errorf("circular reference")
+			}
+		}
+
+		val, ok := values[key]
+		if !ok {
+			val = os.Getenv(key)
+		}
+		new_val, err := expand(val, append(keys, key), prefix, postfix, values)
+		if err != nil {
+			return "", err
+		}
+		s = s[:start] + new_val + s[end+1:]
 	}
-
-	end := keyStart + keyLen + len(postfix) - 1
-	key := s[keyStart : keyStart+keyLen]
-
-	// fmt.Printf("s:%q pp:%q start:%d end:%d keyStart:%d keyLen:%d key:%q\n", s, prefix + "..." + postfix, start, end, keyStart, keyLen, key)
-
-	if _, ok := keys[originkey]; ok {
-		return "", fmt.Errorf("circular reference")
-	}
-
-	val, ok := values[key]
-	if !ok {
-		val = os.Getenv(key)
-	}
-
-	// remember that we've seen the key
-	keys[originkey] = true
-
-	return expand(key, s[:start]+val+s[end+1:], keys, prefix, postfix, values)
+	return s, nil
 }
 
 // encode encodes a UTF-8 string to ISO-8859-1 and escapes some characters.
