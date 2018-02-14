@@ -7,7 +7,9 @@ I realized that all of the git tags I had pushed before v1.7.5 were lightweight 
 and I've only recently learned that this doesn't play well with `git describe` 😞
 
 I have replaced all lightweight tags with signed tags using this script which should
-retain the commit date, name and email address. Worst case you have to reclone the repo.
+retain the commit date, name and email address. Please run `git pull --tags` to update them.
+
+Worst case you have to reclone the repo.
 
 ```shell
 #!/bin/bash
