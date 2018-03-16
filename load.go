@@ -121,6 +121,7 @@ func MustLoadFilesWithEnvOverrides(filenames []string, enc Encoding, ignoreMissi
 
 			envToPropertyName = findOriginalKeyRegardlessOfCase(envToPropertyName, propsFromFile)
 
+			LogPrintf("Overriding property %s with environment variable %s", envToPropertyName, key)
 			propsFromFile.MustSet(envToPropertyName, environmentVariableValue)
 		}
 	}
