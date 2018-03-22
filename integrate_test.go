@@ -52,7 +52,7 @@ func TestFlagOverride(t *testing.T) {
 		t.Errorf("Got customized b=%d, want %d", *gotB, want)
 	}
 	if want := 4; *gotC != want {
-		t.Errorf("Got overriden c=%d, want %d", *gotC, want)
+		t.Errorf("Got overridden c=%d, want %d", *gotC, want)
 	}
 }
 
