@@ -120,9 +120,7 @@ func (l *Loader) LoadURL(url string) (*Properties, error) {
 	if err != nil {
 		return nil, fmt.Errorf("properties: %s error reading response. %s", url, err)
 	}
-	if err = resp.Body.Close(); err != nil {
-		return nil, fmt.Errorf("properties: %s error reading response. %s", url, err)
-	}
+	defer resp.Body.Close()
 
 	ct := resp.Header.Get("Content-Type")
 	var enc Encoding
