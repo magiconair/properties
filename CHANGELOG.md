@@ -1,6 +1,6 @@
 ## Changelog
 
-### Unreleased
+### [1.8](https://github.com/magiconair/properties/tree/v1.8) - 15 May 2018
 
  * [PR #26](https://github.com/magiconair/properties/pull/26): Disable expansion during loading
 
