@@ -27,7 +27,6 @@ type Loader struct {
 	Encoding         Encoding
 	DisableExpansion bool
 	IgnoreMissing    bool
-	ErrorHandler     func(error)
 }
 
 func (l *Loader) LoadBytes(buf []byte) (*Properties, error) {
