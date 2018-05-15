@@ -43,14 +43,7 @@ type Loader struct {
 
 // Load reads a buffer into a Properties struct.
 func (l *Loader) LoadBytes(buf []byte) (*Properties, error) {
-	p, err := parse(convert(buf, l.Encoding))
-	if err != nil {
-		return nil, err
-	}
-	if l.DisableExpansion {
-		return p, nil
-	}
-	return p, p.check()
+	return l.loadBytes(buf, l.Encoding)
 }
 
 // LoadAll reads the content of multiple URLs or files in the given order into
@@ -65,6 +58,7 @@ func (l *Loader) LoadAll(names []string) (*Properties, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		var p *Properties
 		if strings.HasPrefix(n, "http://") || strings.HasPrefix(n, "https://") {
 			p, err = l.LoadURL(n)
@@ -76,7 +70,9 @@ func (l *Loader) LoadAll(names []string) (*Properties, error) {
 		}
 		result.Merge(p)
 	}
-	if l.DisableExpansion {
+
+	result.DisableExpansion = l.DisableExpansion
+	if result.DisableExpansion {
 		return result, nil
 	}
 	return result, result.check()
@@ -94,11 +90,7 @@ func (l *Loader) LoadFile(filename string) (*Properties, error) {
 		}
 		return nil, err
 	}
-	p, err := parse(convert(data, l.Encoding))
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
+	return l.loadBytes(data, l.Encoding)
 }
 
 // LoadURL reads the content of the URL into a Properties struct.
@@ -114,13 +106,16 @@ func (l *Loader) LoadURL(url string) (*Properties, error) {
 	if err != nil {
 		return nil, fmt.Errorf("properties: error fetching %q. %s", url, err)
 	}
+
 	if resp.StatusCode == 404 && l.IgnoreMissing {
 		LogPrintf("properties: %s returned %d. skipping", url, resp.StatusCode)
 		return NewProperties(), nil
 	}
+
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("properties: %s returned %d", url, resp.StatusCode)
 	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("properties: %s error reading response. %s", url, err)
@@ -140,11 +135,19 @@ func (l *Loader) LoadURL(url string) (*Properties, error) {
 		return nil, fmt.Errorf("properties: invalid content type %s", ct)
 	}
 
-	p, err := parse(convert(body, enc))
+	return l.loadBytes(body, enc)
+}
+
+func (l *Loader) loadBytes(buf []byte, enc Encoding) (*Properties, error) {
+	p, err := parse(convert(buf, enc))
 	if err != nil {
 		return nil, err
 	}
-	return p, nil
+	p.DisableExpansion = l.DisableExpansion
+	if p.DisableExpansion {
+		return p, nil
+	}
+	return p, p.check()
 }
 
 // Load reads a buffer into a Properties struct.
