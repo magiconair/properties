@@ -85,7 +85,8 @@ func NewProperties() *Properties {
 
 // Load reads a buffer into the given Properties struct.
 func (p *Properties) Load(buf []byte, enc Encoding) error {
-	newProperties, err := loadBuf(buf, enc, p.DisableExpansion)
+	l := &Loader{Encoding: enc, DisableExpansion: p.DisableExpansion}
+	newProperties, err := l.LoadBytes(buf)
 	if err != nil {
 		return err
 	}
