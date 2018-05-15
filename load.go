@@ -24,11 +24,24 @@ const (
 )
 
 type Loader struct {
-	Encoding         Encoding
+	// Encoding determines how the data from files and byte buffers
+	// is interpreted. For URLs the Content-Type header is used
+	// to determine the encoding of the data.
+	Encoding Encoding
+
+	// DisableExpansion configures the property expansion of the
+	// returned property object. When set to true, the property values
+	// will not be expanded and the Property object will not be checked
+	// for invalid expansion expressions.
 	DisableExpansion bool
-	IgnoreMissing    bool
+
+	// IgnoreMissing configures whether missing files or URLs which return
+	// 404 are reported as errors. When set to true, missing files and 404
+	// status codes are not reported as errors.
+	IgnoreMissing bool
 }
 
+// Load reads a buffer into a Properties struct.
 func (l *Loader) LoadBytes(buf []byte) (*Properties, error) {
 	p, err := parse(convert(buf, l.Encoding))
 	if err != nil {
@@ -40,6 +53,11 @@ func (l *Loader) LoadBytes(buf []byte) (*Properties, error) {
 	return p, p.check()
 }
 
+// LoadAll reads the content of multiple URLs or files in the given order into
+// a Properties struct. If IgnoreMissing is true then a 404 status code or
+// missing file will not be reported as error. Encoding sets the encoding for
+// files. For the URLs see LoadURL for the Content-Type header and the
+// encoding.
 func (l *Loader) LoadAll(names []string) (*Properties, error) {
 	result := NewProperties()
 	for _, name := range names {
@@ -64,6 +82,9 @@ func (l *Loader) LoadAll(names []string) (*Properties, error) {
 	return result, result.check()
 }
 
+// LoadFile reads a file into a Properties struct.
+// If IgnoreMissing is true then a missing file will not be
+// reported as error.
 func (l *Loader) LoadFile(filename string) (*Properties, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -80,6 +101,14 @@ func (l *Loader) LoadFile(filename string) (*Properties, error) {
 	return p, nil
 }
 
+// LoadURL reads the content of the URL into a Properties struct.
+//
+// The encoding is determined via the Content-Type header which
+// should be set to 'text/plain'. If the 'charset' parameter is
+// missing, 'iso-8859-1' or 'latin1' the encoding is set to
+// ISO-8859-1. If the 'charset' parameter is set to 'utf-8' the
+// encoding is set to UTF-8. A missing content type header is
+// interpreted as 'text/plain; charset=utf-8'.
 func (l *Loader) LoadURL(url string) (*Properties, error) {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -150,20 +179,14 @@ func LoadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Propertie
 }
 
 // LoadURL reads the content of the URL into a Properties struct.
-//
-// The encoding is determined via the Content-Type header which
-// should be set to 'text/plain'. If the 'charset' parameter is
-// missing, 'iso-8859-1' or 'latin1' the encoding is set to
-// ISO-8859-1. If the 'charset' parameter is set to 'utf-8' the
-// encoding is set to UTF-8. A missing content type header is
-// interpreted as 'text/plain; charset=utf-8'.
+// See Loader#LoadURL for details.
 func LoadURL(url string) (*Properties, error) {
 	return loadAll([]string{url}, UTF8, false, false)
 }
 
 // LoadURLs reads the content of multiple URLs in the given order into a
-// Properties struct. If 'ignoreMissing' is true then a 404 status code will
-// not be reported as error. See LoadURL for the Content-Type header
+// Properties struct. If IgnoreMissing is true then a 404 status code will
+// not be reported as error. See Loader#LoadURL for the Content-Type header
 // and the encoding.
 func LoadURLs(urls []string, ignoreMissing bool) (*Properties, error) {
 	return loadAll(urls, UTF8, ignoreMissing, false)
