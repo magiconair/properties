@@ -25,12 +25,12 @@ const (
 
 // Load reads a buffer into a Properties struct.
 func Load(buf []byte, enc Encoding) (*Properties, error) {
-	return loadBuf(buf, enc)
+	return loadBuf(buf, enc, false)
 }
 
 // LoadString reads an UTF8 string into a properties struct.
 func LoadString(s string) (*Properties, error) {
-	return loadBuf([]byte(s), UTF8)
+	return loadBuf([]byte(s), UTF8, false)
 }
 
 // LoadMap creates a new Properties struct from a string map.
@@ -44,14 +44,14 @@ func LoadMap(m map[string]string) *Properties {
 
 // LoadFile reads a file into a Properties struct.
 func LoadFile(filename string, enc Encoding) (*Properties, error) {
-	return loadAll([]string{filename}, enc, false)
+	return loadAll([]string{filename}, enc, false, false)
 }
 
 // LoadFiles reads multiple files in the given order into
 // a Properties struct. If 'ignoreMissing' is true then
 // non-existent files will not be reported as error.
 func LoadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Properties, error) {
-	return loadAll(filenames, enc, ignoreMissing)
+	return loadAll(filenames, enc, ignoreMissing, false)
 }
 
 // LoadURL reads the content of the URL into a Properties struct.
@@ -63,7 +63,7 @@ func LoadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Propertie
 // encoding is set to UTF-8. A missing content type header is
 // interpreted as 'text/plain; charset=utf-8'.
 func LoadURL(url string) (*Properties, error) {
-	return loadAll([]string{url}, UTF8, false)
+	return loadAll([]string{url}, UTF8, false, false)
 }
 
 // LoadURLs reads the content of multiple URLs in the given order into a
@@ -71,7 +71,7 @@ func LoadURL(url string) (*Properties, error) {
 // not be reported as error. See LoadURL for the Content-Type header
 // and the encoding.
 func LoadURLs(urls []string, ignoreMissing bool) (*Properties, error) {
-	return loadAll(urls, UTF8, ignoreMissing)
+	return loadAll(urls, UTF8, ignoreMissing, false)
 }
 
 // LoadAll reads the content of multiple URLs or files in the given order into a
@@ -79,7 +79,7 @@ func LoadURLs(urls []string, ignoreMissing bool) (*Properties, error) {
 // not be reported as error. Encoding sets the encoding for files. For the URLs please see
 // LoadURL for the Content-Type header and the encoding.
 func LoadAll(names []string, enc Encoding, ignoreMissing bool) (*Properties, error) {
-	return loadAll(names, enc, ignoreMissing)
+	return loadAll(names, enc, ignoreMissing, false)
 }
 
 // MustLoadString reads an UTF8 string into a Properties struct and
@@ -122,15 +122,18 @@ func MustLoadAll(names []string, enc Encoding, ignoreMissing bool) *Properties {
 	return must(LoadAll(names, enc, ignoreMissing))
 }
 
-func loadBuf(buf []byte, enc Encoding) (*Properties, error) {
+func loadBuf(buf []byte, enc Encoding, disableExpansion bool) (*Properties, error) {
 	p, err := parse(convert(buf, enc))
 	if err != nil {
 		return nil, err
 	}
+	if disableExpansion {
+		return p, nil
+	}
 	return p, p.check()
 }
 
-func loadAll(names []string, enc Encoding, ignoreMissing bool) (*Properties, error) {
+func loadAll(names []string, enc Encoding, ignoreMissing, disableExpansion bool) (*Properties, error) {
 	result := NewProperties()
 	for _, name := range names {
 		n, err := expandName(name)
@@ -148,6 +151,9 @@ func loadAll(names []string, enc Encoding, ignoreMissing bool) (*Properties, err
 		}
 		result.Merge(p)
 
+	}
+	if disableExpansion {
+		return result, nil
 	}
 	return result, result.check()
 }

@@ -903,6 +903,14 @@ func TestFilterFunc(t *testing.T) {
 	assert.Equal(t, pp.Map(), m)
 }
 
+func TestLoad(t *testing.T) {
+	x := "key=${value}\nvalue=${key}"
+	p := NewProperties()
+	p.DisableExpansion = true
+	err := p.Load([]byte(x), UTF8)
+	assert.Equal(t, err, nil)
+}
+
 // ----------------------------------------------------------------------------
 
 // tests all combinations of delimiters, leading and/or trailing whitespace and newlines.

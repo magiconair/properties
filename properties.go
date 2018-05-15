@@ -83,6 +83,16 @@ func NewProperties() *Properties {
 	}
 }
 
+// Load reads a buffer into the given Properties struct.
+func (p *Properties) Load(buf []byte, enc Encoding) error {
+	newProperties, err := loadBuf(buf, enc, p.DisableExpansion)
+	if err != nil {
+		return err
+	}
+	p.Merge(newProperties)
+	return nil
+}
+
 // Get returns the expanded value for the given key if exists.
 // Otherwise, ok is false.
 func (p *Properties) Get(key string) (value string, ok bool) {
