@@ -16,8 +16,14 @@ import (
 type Encoding uint
 
 const (
+	// utf8Default is a private placeholder for the zero value of Encoding to
+	// ensure that it has the correct meaning. UTF8 is the default encoding but
+	// was assigned a non-zero value which cannot be changed without breaking
+	// existing code. Clients should continue to use the public constants.
+	utf8Default Encoding = iota
+
 	// UTF8 interprets the input data as UTF-8.
-	UTF8 Encoding = 1 << iota
+	UTF8
 
 	// ISO_8859_1 interprets the input data as ISO-8859-1.
 	ISO_8859_1
@@ -271,7 +277,7 @@ func expandName(name string) (string, error) {
 // first 256 unicode code points cover ISO-8859-1.
 func convert(buf []byte, enc Encoding) string {
 	switch enc {
-	case UTF8:
+	case utf8Default, UTF8:
 		return string(buf)
 	case ISO_8859_1:
 		runes := make([]rune, len(buf))
