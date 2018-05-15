@@ -60,9 +60,12 @@ func (l *Loader) LoadAll(names []string) (*Properties, error) {
 		}
 
 		var p *Properties
-		if strings.HasPrefix(n, "http://") || strings.HasPrefix(n, "https://") {
+		switch {
+		case strings.HasPrefix(n, "http://"):
 			p, err = l.LoadURL(n)
-		} else {
+		case strings.HasPrefix(n, "https://"):
+			p, err = l.LoadURL(n)
+		default:
 			p, err = l.LoadFile(n)
 		}
 		if err != nil {
