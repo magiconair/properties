@@ -52,7 +52,7 @@ func (l *Loader) LoadBytes(buf []byte) (*Properties, error) {
 // files. For the URLs see LoadURL for the Content-Type header and the
 // encoding.
 func (l *Loader) LoadAll(names []string) (*Properties, error) {
-	result := NewProperties()
+	all := NewProperties()
 	for _, name := range names {
 		n, err := expandName(name)
 		if err != nil {
@@ -71,14 +71,14 @@ func (l *Loader) LoadAll(names []string) (*Properties, error) {
 		if err != nil {
 			return nil, err
 		}
-		result.Merge(p)
+		all.Merge(p)
 	}
 
-	result.DisableExpansion = l.DisableExpansion
-	if result.DisableExpansion {
-		return result, nil
+	all.DisableExpansion = l.DisableExpansion
+	if all.DisableExpansion {
+		return all, nil
 	}
-	return result, result.check()
+	return all, all.check()
 }
 
 // LoadFile reads a file into a Properties struct.
