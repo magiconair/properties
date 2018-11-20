@@ -4,7 +4,7 @@ jobs:
     docker:
       - image: circleci/golang:1.11
 
-    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
+    working_directory: /go/src/github.com/magiconair/properties
     steps:
       - checkout
       - run: go get -v -t -d ./...
