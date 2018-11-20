@@ -30,7 +30,7 @@ changed from `panic` to `log.Fatal` but this is configurable and custom
 error handling functions can be provided. See the package documentation for
 details.
 
-Read the full documentation on [GoDoc](https://godoc.org/github.com/magiconair/properties)   [![GoDoc](https://godoc.org/github.com/magiconair/properties?status.png)](https://godoc.org/github.com/magiconair/properties)
+Read the full documentation on [![GoDoc](http://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](http://godoc.org/github.com/magiconair/properties)
 
 ## Getting Started
 
