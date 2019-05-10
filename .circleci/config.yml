@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.11.2
+      - image: circleci/golang:1.12.5
 
     working_directory: /go/src/github.com/magiconair/properties
     steps:
