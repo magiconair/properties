@@ -151,12 +151,14 @@ var writeTests = []struct {
 	{"key = value \\\n   continued", "key = value continued\n", "ISO-8859-1"},
 	{"key⌘ = value", "key\\u2318 = value\n", "ISO-8859-1"},
 	{"ke\\ \\:y = value", "ke\\ \\:y = value\n", "ISO-8859-1"},
+	{"ke\\\\y = val\\\\ue", "ke\\\\y = val\\\\ue\n", "ISO-8859-1"},
 
 	// UTF-8 tests
 	{"key = value", "key = value\n", "UTF-8"},
 	{"key = value \\\n   continued", "key = value continued\n", "UTF-8"},
 	{"key⌘ = value⌘", "key⌘ = value⌘\n", "UTF-8"},
 	{"ke\\ \\:y = value", "ke\\ \\:y = value\n", "UTF-8"},
+	{"ke\\\\y = val\\\\ue", "ke\\\\y = val\\\\ue\n", "UTF-8"},
 }
 
 // ----------------------------------------------------------------------------
@@ -329,6 +331,7 @@ var stringTests = []struct {
 }{
 	// valid values
 	{"key = abc", "key", "def", "abc"},
+	{"key = ab\\\\c", "key", "def", "ab\\c"},
 
 	// non existent key
 	{"key = abc", "key2", "def", "def"},
@@ -345,6 +348,7 @@ var keysTests = []struct {
 	{"key = abc\nkey2=def", []string{"key", "key2"}},
 	{"key2 = abc\nkey=def", []string{"key2", "key"}},
 	{"key = abc\nkey=def", []string{"key"}},
+	{"key\\\\with\\\\backslashes = abc", []string{"key\\with\\backslashes"}},
 }
 
 // ----------------------------------------------------------------------------
