@@ -321,6 +321,7 @@ func (l *lexer) scanEscapeSequence() error {
 
 	// silently drop the escape character and append the rune as is
 	default:
+		l.appendRune('\\') // Assumes the escape character is put on purpose
 		l.appendRune(r)
 		return nil
 	}

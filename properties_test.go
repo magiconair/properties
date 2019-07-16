@@ -65,9 +65,10 @@ var complexTests = [][]string{
 	{"key = v\\ralue", "key", "v\ralue"},
 	{"key = v\\talue", "key", "v\talue"},
 
-	// silently dropped escape character
-	{"k\\zey = value", "kzey", "value"},
-	{"key = v\\zalue", "key", "vzalue"},
+	// doesn't drop escape character
+	{"k\\zey = value", "k\\zey", "value"},
+	{"key = v\\zalue", "key", "v\\zalue"},
+	{"key1 = \\{name\\} \\\\{value}", "key1", "\\{name\\} \\\\{value}"},
 
 	// unicode literals
 	{"key\\u2318 = value", "key⌘", "value"},
