@@ -278,7 +278,7 @@ func TestDecodeMap(t *testing.T) {
 }
 
 func testDecode(t *testing.T, in string, v, out interface{}) {
-	p, err := parse(in)
+	p, err := parse(in, false)
 	if err != nil {
 		t.Fatalf("got %v want nil", err)
 	}

@@ -45,6 +45,10 @@ type Loader struct {
 	// 404 are reported as errors. When set to true, missing files and 404
 	// status codes are not reported as errors.
 	IgnoreMissing bool
+
+    // KeepBackslash true: doesn't drop the backslash \ that isn't precede any of " :=fnrt", default is false
+	KeepBackslash bool
+
 }
 
 // Load reads a buffer into a Properties struct.
@@ -146,7 +150,7 @@ func (l *Loader) LoadURL(url string) (*Properties, error) {
 }
 
 func (l *Loader) loadBytes(buf []byte, enc Encoding) (*Properties, error) {
-	p, err := parse(convert(buf, enc))
+	p, err := parse(convert(buf, enc), l.KeepBackslash)
 	if err != nil {
 		return nil, err
 	}
