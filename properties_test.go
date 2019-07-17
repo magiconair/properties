@@ -28,6 +28,15 @@ func init() {
 
 // define test cases in the form of
 // {"input", "key1", "value1", "key2", "value2", ...}
+var preservedBackslashTests = [][]string{
+	// doesn't drop escape character
+	{"k\\zey = value", "k\\zey", "value"},
+	{"key = v\\zalue", "key", "v\\zalue"},
+	{"key1 = \\{name\\} \\\\{value}", "key1", "\\{name\\} \\\\{value}"},
+}
+
+// define test cases in the form of
+// {"input", "key1", "value1", "key2", "value2", ...}
 var complexTests = [][]string{
 	// whitespace prefix
 	{" key=value", "key", "value"},     // SPACE prefix
@@ -65,10 +74,9 @@ var complexTests = [][]string{
 	{"key = v\\ralue", "key", "v\ralue"},
 	{"key = v\\talue", "key", "v\talue"},
 
-	// doesn't drop escape character
-	{"k\\zey = value", "k\\zey", "value"},
-	{"key = v\\zalue", "key", "v\\zalue"},
-	{"key1 = \\{name\\} \\\\{value}", "key1", "\\{name\\} \\\\{value}"},
+	// silently dropped escape character
+	{"k\\zey = value", "kzey", "value"},
+	{"key = v\\zalue", "key", "vzalue"},
 
 	// unicode literals
 	{"key\\u2318 = value", "key⌘", "value"},
@@ -429,6 +437,12 @@ var setTests = []struct {
 
 // ----------------------------------------------------------------------------
 
+func TestPreservedBackslash(t *testing.T) {
+	for _, test := range preservedBackslashTests {
+		testKeyValue(t, true, test[0], test[1:]...)
+	}
+}
+
 // TestBasic tests basic single key/value combinations with all possible
 // whitespace, delimiter and newline permutations.
 func TestBasic(t *testing.T) {
@@ -439,7 +453,7 @@ func TestBasic(t *testing.T) {
 
 func TestComplex(t *testing.T) {
 	for _, test := range complexTests {
-		testKeyValue(t, test[0], test[1:]...)
+		testKeyValue(t, false, test[0], test[1:]...)
 	}
 }
 
@@ -788,7 +802,7 @@ func TestMustSet(t *testing.T) {
 
 func TestWrite(t *testing.T) {
 	for _, test := range writeTests {
-		p, err := parse(test.input)
+		p, err := parse(test.input, false)
 
 		buf := new(bytes.Buffer)
 		var n int
@@ -807,7 +821,7 @@ func TestWrite(t *testing.T) {
 
 func TestWriteComment(t *testing.T) {
 	for _, test := range writeCommentTests {
-		p, err := parse(test.input)
+		p, err := parse(test.input, false)
 
 		buf := new(bytes.Buffer)
 		var n int
@@ -825,7 +839,7 @@ func TestWriteComment(t *testing.T) {
 }
 
 func TestCustomExpansionExpression(t *testing.T) {
-	testKeyValuePrePostfix(t, "*[", "]*", "key=value\nkey2=*[key]*", "key", "value", "key2", "value")
+	testKeyValuePrePostfix(t, false, "*[", "]*", "key=value\nkey2=*[key]*", "key", "value", "key2", "value")
 }
 
 func TestPanicOn32BitIntOverflow(t *testing.T) {
@@ -929,7 +943,7 @@ func testWhitespaceAndDelimiterCombinations(t *testing.T, key, value string) {
 					}
 
 					input := fmt.Sprintf("%s%s%s%s%s%s", key, ws1, dl, ws2, value, nl)
-					testKeyValue(t, input, key, value)
+					testKeyValue(t, false, input, key, value)
 				}
 			}
 		}
@@ -938,14 +952,16 @@ func testWhitespaceAndDelimiterCombinations(t *testing.T, key, value string) {
 
 // tests whether key/value pairs exist for a given input.
 // keyvalues is expected to be an even number of strings of "key", "value", ...
-func testKeyValue(t *testing.T, input string, keyvalues ...string) {
-	testKeyValuePrePostfix(t, "${", "}", input, keyvalues...)
+func testKeyValue(t *testing.T, keepBackslash bool, input string, keyvalues ...string) {
+	testKeyValuePrePostfix(t, keepBackslash, "${", "}", input, keyvalues...)
 }
 
 // tests whether key/value pairs exist for a given input.
 // keyvalues is expected to be an even number of strings of "key", "value", ...
-func testKeyValuePrePostfix(t *testing.T, prefix, postfix, input string, keyvalues ...string) {
-	p, err := Load([]byte(input), ISO_8859_1)
+func testKeyValuePrePostfix(t *testing.T, keepBackslash bool, prefix, postfix, input string, keyvalues ...string) {
+	p := NewProperties()
+	p.KeepBackslash = keepBackslash
+	err := p.Load([]byte(input), ISO_8859_1)
 	assert.Equal(t, err, nil)
 	p.Prefix = prefix
 	p.Postfix = postfix
@@ -971,7 +987,7 @@ func assertKeyValues(t *testing.T, input string, p *Properties, keyvalues ...str
 }
 
 func mustParse(t *testing.T, s string) *Properties {
-	p, err := parse(s)
+	p, err := parse(s, false)
 	if err != nil {
 		t.Fatalf("parse failed with %s", err)
 	}
