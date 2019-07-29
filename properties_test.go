@@ -787,7 +787,7 @@ func TestMustSet(t *testing.T) {
 
 func TestWrite(t *testing.T) {
 	for _, test := range writeTests {
-		p, err := parse(test.input)
+		p, err := parse(test.input, false)
 
 		buf := new(bytes.Buffer)
 		var n int
@@ -806,7 +806,7 @@ func TestWrite(t *testing.T) {
 
 func TestWriteComment(t *testing.T) {
 	for _, test := range writeCommentTests {
-		p, err := parse(test.input)
+		p, err := parse(test.input, false)
 
 		buf := new(bytes.Buffer)
 		var n int
@@ -970,7 +970,7 @@ func assertKeyValues(t *testing.T, input string, p *Properties, keyvalues ...str
 }
 
 func mustParse(t *testing.T, s string) *Properties {
-	p, err := parse(s)
+	p, err := parse(s, false)
 	if err != nil {
 		t.Fatalf("parse failed with %s", err)
 	}

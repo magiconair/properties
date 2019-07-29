@@ -7,30 +7,53 @@ package properties
 import (
 	"fmt"
 	"runtime"
+	"strings"
 )
 
 type parser struct {
 	lex *lexer
 }
 
-func parse(input string) (properties *Properties, err error) {
-	p := &parser{lex: lex(input)}
+func parse(input string, preserveFormatting bool) (properties *Properties, err error) {
+	p := &parser{lex: lex(input, preserveFormatting)}
 	defer p.recover(&err)
 
 	properties = NewProperties()
+	properties.PreserveFormatting = preserveFormatting
 	key := ""
-	comments := []string{}
+	comments := []Comment{}
 
 	for {
 		token := p.expectOneOf(itemComment, itemKey, itemEOF)
 		switch token.typ {
 		case itemEOF:
+			if preserveFormatting && (len(comments) > 0 || token.val != "") {
+				// There are comments at the end of the input that are not tied to a particular key
+				// Save these off against a special empty key when preserving formatting
+				if token.val != "" {
+					prefixIndex := 0
+					// Include leading whitespace into the prefix
+					prefixIndex = strings.Index(token.val, strings.TrimSpace(token.val))
+					prefix := token.val[0 : prefixIndex+1]
+					comment := Comment{prefix, token.val[prefixIndex+1 : len(token.val)]}
+					comments = append(comments, comment)
+				}
+				properties.c[""] = comments
+			}
 			goto done
 		case itemComment:
-			comments = append(comments, token.val)
+			prefix := "#"
+			prefixIndex := 0
+			if preserveFormatting {
+				// Include leading whitespace into the prefix
+				prefixIndex = strings.Index(token.val, strings.TrimSpace(token.val))
+				prefix = token.val[0:prefixIndex+1]
+			}
+			comment := Comment{prefix, token.val[prefixIndex+1:len(token.val)]}
+			comments = append(comments, comment)
 			continue
 		case itemKey:
-			key = token.val
+			key = strings.TrimSpace(token.val)
 			if _, ok := properties.m[key]; !ok {
 				properties.k = append(properties.k, key)
 			}
@@ -39,7 +62,7 @@ func parse(input string) (properties *Properties, err error) {
 		token = p.expectOneOf(itemValue, itemEOF)
 		if len(comments) > 0 {
 			properties.c[key] = comments
-			comments = []string{}
+			comments = []Comment{}
 		}
 		switch token.typ {
 		case itemEOF:

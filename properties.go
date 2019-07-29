@@ -48,6 +48,11 @@ func PanicHandler(err error) {
 
 // -----------------------------------------------------------------------------
 
+type Comment struct {
+	prefix string // prefix type (#, !, or "" to suppress a prefix)
+	val string   // The value of this item.
+}
+
 // A Properties contains the key/value pairs from the properties input.
 // All values are stored in unexpanded form and are expanded at runtime
 type Properties struct {
@@ -65,10 +70,13 @@ type Properties struct {
 	m map[string]string
 
 	// Stores the comments per key.
-	c map[string][]string
+	c map[string][]Comment
 
 	// Stores the keys in order of appearance.
 	k []string
+
+	// Preserve formatting (whitespace/comment prefix) when reading in properties
+	PreserveFormatting bool
 }
 
 // NewProperties creates a new Properties struct with the default
@@ -78,7 +86,7 @@ func NewProperties() *Properties {
 		Prefix:  "${",
 		Postfix: "}",
 		m:       map[string]string{},
-		c:       map[string][]string{},
+		c:       map[string][]Comment{},
 		k:       []string{},
 	}
 }
@@ -131,7 +139,7 @@ func (p *Properties) MustGet(key string) string {
 
 // ClearComments removes the comments for all keys.
 func (p *Properties) ClearComments() {
-	p.c = map[string][]string{}
+	p.c = map[string][]Comment{}
 }
 
 // ----------------------------------------------------------------------------
@@ -142,7 +150,7 @@ func (p *Properties) GetComment(key string) string {
 	if !ok || len(comments) == 0 {
 		return ""
 	}
-	return comments[len(comments)-1]
+	return comments[len(comments)-1].val
 }
 
 // ----------------------------------------------------------------------------
@@ -150,7 +158,11 @@ func (p *Properties) GetComment(key string) string {
 // GetComments returns all comments that appeared before the given key or nil.
 func (p *Properties) GetComments(key string) []string {
 	if comments, ok := p.c[key]; ok {
-		return comments
+		var list []string
+		for _, comment := range comments {
+			list = append(list, comment.val)
+		}
+		return list
 	}
 	return nil
 }
@@ -159,7 +171,14 @@ func (p *Properties) GetComments(key string) []string {
 
 // SetComment sets the comment for the key.
 func (p *Properties) SetComment(key, comment string) {
-	p.c[key] = []string{comment}
+	p.c[key] = []Comment{{"#", comment}}
+}
+
+// ----------------------------------------------------------------------------
+
+// SetComment sets the comment for the key.
+func (p *Properties) SetCommentWithPrefix(key, prefix string, comment string) {
+	p.c[key] = []Comment{{prefix, comment}}
 }
 
 // ----------------------------------------------------------------------------
@@ -167,11 +186,23 @@ func (p *Properties) SetComment(key, comment string) {
 // SetComments sets the comments for the key. If the comments are nil then
 // all comments for this key are deleted.
 func (p *Properties) SetComments(key string, comments []string) {
+	p.SetCommentsWithPrefix(key, "#", comments)
+}
+
+// ----------------------------------------------------------------------------
+
+// SetComments sets the comments for the key. If the comments are nil then
+// all comments for this key are deleted.
+func (p *Properties) SetCommentsWithPrefix(key string, prefix string, comments []string) {
 	if comments == nil {
 		delete(p.c, key)
 		return
 	}
-	p.c[key] = comments
+	var list = make([]Comment, 0, len(comments))
+	for _, comment := range comments {
+		list = append(list, Comment{prefix, comment})
+	}
+	p.c[key] = list
 }
 
 // ----------------------------------------------------------------------------
@@ -592,30 +623,33 @@ func (p *Properties) Write(w io.Writer, enc Encoding) (n int, err error) {
 	return p.WriteComment(w, "", enc)
 }
 
-// WriteComment writes all unexpanced 'key = value' pairs to the given writer.
+// WriteComment writes all unexpanded 'key = value' pairs to the given writer.
 // If prefix is not empty then comments are written with a blank line and the
-// given prefix. The prefix should be either "# " or "! " to be compatible with
+// given prefix. The prefix should be either "#" or "!" to be compatible with
 // the properties file format. Otherwise, the properties parser will not be
 // able to read the file back in. It returns the number of bytes written and
 // any write error encountered.
 func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n int, err error) {
-	var x int
+	return p.WriteCommentWithFormatting(w, prefix, enc, false)
+}
 
+func (p *Properties) WriteCommentWithFormatting(w io.Writer, prefix string, enc Encoding, preserveFormatting bool) (n int, err error) {
+	var x int
 	for _, key := range p.k {
 		value := p.m[key]
 
-		if prefix != "" {
+		if prefix != "" || preserveFormatting {
 			if comments, ok := p.c[key]; ok {
 				// don't print comments if they are all empty
 				allEmpty := true
 				for _, c := range comments {
-					if c != "" {
+					if strings.TrimSpace(c.val) != "" {
 						allEmpty = false
 						break
 					}
 				}
 
-				if !allEmpty {
+				if !allEmpty && !preserveFormatting {
 					// add a blank line between entries but not at the top
 					if len(comments) > 0 && n > 0 {
 						x, err = fmt.Fprintln(w)
@@ -624,13 +658,25 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 						}
 						n += x
 					}
-
+				}
+				if !allEmpty || preserveFormatting {
 					for _, c := range comments {
-						x, err = fmt.Fprintf(w, "%s%s\n", prefix, encode(c, "", enc))
-						if err != nil {
-							return
+						actualPrefix := prefix
+						if prefix == "" && c.prefix != "\n" {
+							// No prefix passed in and this is not just a newline comment, so use the stored prefix
+							actualPrefix = c.prefix
 						}
-						n += x
+						actualValue := c.val
+						if !preserveFormatting {
+							actualValue = strings.TrimSpace(c.val)
+						}
+						if preserveFormatting || strings.TrimSpace(actualValue) != "" {
+							x, err = fmt.Fprintf(w, "%s%s\n", actualPrefix, encode(actualValue, "", enc))
+							if err != nil {
+								return
+							}
+							n += x
+						}
 					}
 				}
 			}
@@ -641,6 +687,21 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 			return
 		}
 		n += x
+	}
+	if comments, exists := p.c[""]; exists && preserveFormatting {
+		for _, c := range comments {
+			actualPrefix := prefix
+			if prefix == "" && c.prefix != "\n" {
+				// No prefix passed in and this is not just a newline comment, so use the stored prefix
+				actualPrefix = c.prefix
+			}
+			actualValue := c.val
+			x, err = fmt.Fprintf(w, "%s%s\n", actualPrefix, encode(actualValue, "", enc))
+			if err != nil {
+				return
+			}
+			n += x
+		}
 	}
 	return
 }

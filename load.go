@@ -45,11 +45,16 @@ type Loader struct {
 	// 404 are reported as errors. When set to true, missing files and 404
 	// status codes are not reported as errors.
 	IgnoreMissing bool
+
+	// PreserveFormatting causes the loader to scan whitespace as part of the
+	// comments for the next key. These can then be written out by passing
+	// a similar preserveFormatting argument to WriteCommentWithFormatting.
+	PreserveFormatting bool
 }
 
 // Load reads a buffer into a Properties struct.
 func (l *Loader) LoadBytes(buf []byte) (*Properties, error) {
-	return l.loadBytes(buf, l.Encoding)
+	return l.loadBytes(buf, l.Encoding, l.PreserveFormatting)
 }
 
 // LoadAll reads the content of multiple URLs or files in the given order into
@@ -99,7 +104,7 @@ func (l *Loader) LoadFile(filename string) (*Properties, error) {
 		}
 		return nil, err
 	}
-	return l.loadBytes(data, l.Encoding)
+	return l.loadBytes(data, l.Encoding, l.PreserveFormatting)
 }
 
 // LoadURL reads the content of the URL into a Properties struct.
@@ -142,11 +147,11 @@ func (l *Loader) LoadURL(url string) (*Properties, error) {
 		return nil, fmt.Errorf("properties: invalid content type %s", ct)
 	}
 
-	return l.loadBytes(body, enc)
+	return l.loadBytes(body, enc, l.PreserveFormatting)
 }
 
-func (l *Loader) loadBytes(buf []byte, enc Encoding) (*Properties, error) {
-	p, err := parse(convert(buf, enc))
+func (l *Loader) loadBytes(buf []byte, enc Encoding, preserveFormatting bool) (*Properties, error) {
+	p, err := parse(convert(buf, enc), preserveFormatting)
 	if err != nil {
 		return nil, err
 	}
@@ -176,6 +181,10 @@ func LoadMap(m map[string]string) *Properties {
 		p.Set(k, v)
 	}
 	return p
+}
+
+func GetLoader() (*Loader, error) {
+	return &Loader{}, nil
 }
 
 // LoadFile reads a file into a Properties struct.
