@@ -122,6 +122,24 @@ var commentTests = []struct {
 
 // ----------------------------------------------------------------------------
 
+var formattedCommentTests = []struct {
+	prefix string
+	comments []string
+}{
+	{"", nil},
+	{"", []string{""}},
+	{" ", []string{"   "}},
+	{"#", []string{"comment"}},
+	{"!", []string{"comment"}},
+	{"#", []string{""}},
+	{"!", []string{""}},
+	{"\n", []string{""}},
+	{"  #", []string{"comment1", "comment2"}},
+	{" !", []string{"comment1", "comment2"}},
+}
+
+// ----------------------------------------------------------------------------
+
 var errorTests = []struct {
 	input, msg string
 }{
@@ -173,6 +191,62 @@ var writeCommentTests = []struct {
 	{"# comment\n\nkey = value", "# comment\nkey = value\n", "ISO-8859-1"},
 	{"# comment1\n# comment2\nkey = value", "# comment1\n# comment2\nkey = value\n", "ISO-8859-1"},
 	{"#comment1\nkey1 = value1\n#comment2\nkey2 = value2", "# comment1\nkey1 = value1\n\n# comment2\nkey2 = value2\n", "ISO-8859-1"},
+	{"key = value\n # comment1", "key = value\n", "ISO-8859-1"},
+
+	// UTF-8 tests
+	{"key = value", "key = value\n", "UTF-8"},
+	{"# comment⌘\nkey = value⌘", "# comment⌘\nkey = value⌘\n", "UTF-8"},
+	{"\n# comment⌘\nkey = value⌘", "# comment⌘\nkey = value⌘\n", "UTF-8"},
+	{"# comment⌘\n\nkey = value⌘", "# comment⌘\nkey = value⌘\n", "UTF-8"},
+	{"# comment1⌘\n# comment2⌘\nkey = value⌘", "# comment1⌘\n# comment2⌘\nkey = value⌘\n", "UTF-8"},
+	{"#comment1⌘\nkey1 = value1⌘\n#comment2⌘\nkey2 = value2⌘", "# comment1⌘\nkey1 = value1⌘\n\n# comment2⌘\nkey2 = value2⌘\n", "UTF-8"},
+}
+
+// ----------------------------------------------------------------------------
+
+var writeCommentWithFormattingTests = []struct {
+	input, encoding string
+}{
+	// ISO-8859-1 tests
+	{"key = value", "ISO-8859-1"},
+	{"#\nkey = value","ISO-8859-1"},
+	{"#\n#\n#\nkey = value", "ISO-8859-1"},
+	{"# comment\nkey = value", "ISO-8859-1"},
+	{"\n# comment\nkey = value", "ISO-8859-1"},
+	{"# comment\n\nkey = value", "ISO-8859-1"},
+	{"# comment1\n# comment2\nkey = value", "ISO-8859-1"},
+	{"#comment1\nkey1 = value1\n #comment2\nkey2 = value2", "ISO-8859-1"},
+	{"\n\n # \n#\n#comment\n\nkey = value", "ISO-8859-1"},
+	{"\n#comment1\nkey1 = value1\n\n#\n#comment2#\n\nkey2 = value2", "ISO-8859-1"},
+	{"key = value\n # comment1", "ISO-8859-1"},
+
+	// UTF-8 tests
+	{"key = value", "UTF-8"},
+	{"# comment⌘\nkey = value⌘", "UTF-8"},
+	{"\n# comment⌘\nkey = value⌘", "UTF-8"},
+	{"# comment⌘\n\nkey = value⌘", "UTF-8"},
+	{"# comment1⌘\n# comment2⌘\nkey = value⌘", "UTF-8"},
+	{"#comment1⌘\nkey1 = value1⌘\n#comment2⌘\nkey2 = value2⌘", "UTF-8"},
+	{"\n\n # \n#\n#comment\n\nkey = value⌘", "UTF-8"},
+}
+
+// ----------------------------------------------------------------------------
+
+var writeFormattedCommentWithoutFormattingTests = []struct {
+	input, output, encoding string
+}{
+	// ISO-8859-1 tests
+	{"key = value", "key = value\n", "ISO-8859-1"},
+	{"#\nkey = value", "key = value\n", "ISO-8859-1"},
+	{"#\n#\n#\nkey = value", "key = value\n", "ISO-8859-1"},
+	{" # comment\nkey = value", "# comment\nkey = value\n", "ISO-8859-1"},
+	{"\n# comment\nkey = value", "# comment\nkey = value\n", "ISO-8859-1"},
+	{"# comment\n\nkey = value", "# comment\nkey = value\n", "ISO-8859-1"},
+	{"# comment1\n# comment2\nkey = value", "# comment1\n# comment2\nkey = value\n", "ISO-8859-1"},
+	{"#comment1\nkey1 = value1\n #comment2\nkey2 = value2", "# comment1\nkey1 = value1\n\n# comment2\nkey2 = value2\n", "ISO-8859-1"},
+	{"\n\n # \n#\n #comment\n\nkey = value", "# comment\nkey = value\n","ISO-8859-1"},
+	{"\n#comment1\nkey1 = value1\n\n#\n#comment2\n#\n\nkey2 = value2", "# comment1\nkey1 = value1\n\n# comment2\nkey2 = value2\n", "ISO-8859-1"},
+	{"key = value\n # comment1", "key = value\n", "ISO-8859-1"},
 
 	// UTF-8 tests
 	{"key = value", "key = value\n", "UTF-8"},
@@ -683,6 +757,28 @@ func TestComment(t *testing.T) {
 	}
 }
 
+func TestFormattedComment(t *testing.T) {
+	for _, test := range formattedCommentTests {
+		key := "key"
+		p := LoadMap(map[string]string{key: "value"})
+
+		// test setting comments
+		if len(test.comments) > 0 {
+			// set single comment
+			p.ClearComments()
+			assert.Equal(t, len(p.c), 0)
+			p.SetCommentWithPrefix(key, test.prefix, test.comments[0])
+			assert.Equal(t, p.GetComment(key), test.comments[0])
+
+			// set multiple comments
+			p.ClearComments()
+			assert.Equal(t, len(p.c), 0)
+			p.SetCommentsWithPrefix(key, test.prefix, test.comments)
+			assert.Equal(t, p.GetComments(key), test.comments)
+		}
+	}
+}
+
 func TestFilter(t *testing.T) {
 	for _, test := range filterTests {
 		p := mustParse(t, test.input)
@@ -807,6 +903,45 @@ func TestWrite(t *testing.T) {
 func TestWriteComment(t *testing.T) {
 	for _, test := range writeCommentTests {
 		p, err := parse(test.input, false)
+
+		buf := new(bytes.Buffer)
+		var n int
+		switch test.encoding {
+		case "UTF-8":
+			n, err = p.WriteComment(buf, "# ", UTF8)
+		case "ISO-8859-1":
+			n, err = p.WriteComment(buf, "# ", ISO_8859_1)
+		}
+		assert.Equal(t, err, nil)
+		s := string(buf.Bytes())
+		assert.Equal(t, n, len(test.output), fmt.Sprintf("input=%q expected=%q obtained=%q", test.input, test.output, s))
+		assert.Equal(t, s, test.output, fmt.Sprintf("input=%q expected=%q obtained=%q", test.input, test.output, s))
+	}
+}
+
+func TestWriteCommentWithFormatting(t *testing.T) {
+	for _, test := range writeCommentWithFormattingTests {
+		p, err := parse(test.input, true)
+
+		buf := new(bytes.Buffer)
+		var n int
+		switch test.encoding {
+		case "UTF-8":
+			n, err = p.WriteCommentWithFormatting(buf, "", UTF8, true)
+		case "ISO-8859-1":
+			n, err = p.WriteCommentWithFormatting(buf, "", ISO_8859_1, true)
+		}
+		assert.Equal(t, err, nil)
+		s := string(buf.Bytes())
+		expectedOutput := test.input + "\n"	// output should match input with trailing newline
+		assert.Equal(t, n, len(expectedOutput), fmt.Sprintf("input=%q expected=%q obtained=%q", test.input, expectedOutput, s))
+		assert.Equal(t, s, expectedOutput, fmt.Sprintf("input=%q expected=%q obtained=%q", test.input, expectedOutput, s))
+	}
+}
+
+func TestWriteFormattedCommentWithoutFormatting(t *testing.T) {
+	for _, test := range writeFormattedCommentWithoutFormattingTests {
+		p, err := parse(test.input, true)
 
 		buf := new(bytes.Buffer)
 		var n int
