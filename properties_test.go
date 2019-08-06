@@ -884,6 +884,7 @@ func TestMustSet(t *testing.T) {
 func TestWrite(t *testing.T) {
 	for _, test := range writeTests {
 		p, err := parse(test.input, false)
+		assert.Equal(t, err, nil)
 
 		buf := new(bytes.Buffer)
 		var n int
@@ -903,6 +904,7 @@ func TestWrite(t *testing.T) {
 func TestWriteComment(t *testing.T) {
 	for _, test := range writeCommentTests {
 		p, err := parse(test.input, false)
+		assert.Equal(t, err, nil)
 
 		buf := new(bytes.Buffer)
 		var n int
@@ -922,14 +924,15 @@ func TestWriteComment(t *testing.T) {
 func TestWriteCommentWithFormatting(t *testing.T) {
 	for _, test := range writeCommentWithFormattingTests {
 		p, err := parse(test.input, true)
+		assert.Equal(t, err, nil)
 
 		buf := new(bytes.Buffer)
 		var n int
 		switch test.encoding {
 		case "UTF-8":
-			n, err = p.WriteCommentWithFormatting(buf, "", UTF8, true)
+			n, err = p.WriteFormattedComment(buf, UTF8)
 		case "ISO-8859-1":
-			n, err = p.WriteCommentWithFormatting(buf, "", ISO_8859_1, true)
+			n, err = p.WriteFormattedComment(buf, ISO_8859_1)
 		}
 		assert.Equal(t, err, nil)
 		s := string(buf.Bytes())
@@ -942,6 +945,7 @@ func TestWriteCommentWithFormatting(t *testing.T) {
 func TestWriteFormattedCommentWithoutFormatting(t *testing.T) {
 	for _, test := range writeFormattedCommentWithoutFormattingTests {
 		p, err := parse(test.input, true)
+		assert.Equal(t, err, nil)
 
 		buf := new(bytes.Buffer)
 		var n int
