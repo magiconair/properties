@@ -54,7 +54,7 @@ type Loader struct {
 
 // Load reads a buffer into a Properties struct.
 func (l *Loader) LoadBytes(buf []byte) (*Properties, error) {
-	return l.loadBytes(buf, l.Encoding, l.PreserveFormatting)
+	return l.loadBytes(buf, l.Encoding)
 }
 
 // LoadAll reads the content of multiple URLs or files in the given order into
@@ -104,7 +104,7 @@ func (l *Loader) LoadFile(filename string) (*Properties, error) {
 		}
 		return nil, err
 	}
-	return l.loadBytes(data, l.Encoding, l.PreserveFormatting)
+	return l.loadBytes(data, l.Encoding)
 }
 
 // LoadURL reads the content of the URL into a Properties struct.
@@ -147,11 +147,11 @@ func (l *Loader) LoadURL(url string) (*Properties, error) {
 		return nil, fmt.Errorf("properties: invalid content type %s", ct)
 	}
 
-	return l.loadBytes(body, enc, l.PreserveFormatting)
+	return l.loadBytes(body, enc)
 }
 
-func (l *Loader) loadBytes(buf []byte, enc Encoding, preserveFormatting bool) (*Properties, error) {
-	p, err := parse(convert(buf, enc), preserveFormatting)
+func (l *Loader) loadBytes(buf []byte, enc Encoding) (*Properties, error) {
+	p, err := parse(convert(buf, enc), l.PreserveFormatting)
 	if err != nil {
 		return nil, err
 	}
@@ -181,10 +181,6 @@ func LoadMap(m map[string]string) *Properties {
 		p.Set(k, v)
 	}
 	return p
-}
-
-func GetLoader() (*Loader, error) {
-	return &Loader{}, nil
 }
 
 // LoadFile reads a file into a Properties struct.

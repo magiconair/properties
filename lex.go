@@ -60,7 +60,7 @@ type stateFn func(*lexer) stateFn
 
 // lexer holds the state of the scanner.
 type lexer struct {
-	preserveFormatting bool  // whether to scan EOLs/whitespace as part of comments
+	keepWS bool       // retain EOLs/whitespace as part of comments
 	input   string    // the string being scanned
 	state   stateFn   // the next lexing function to enter
 	pos     int       // current position in the input
@@ -163,15 +163,12 @@ func (l *lexer) nextItem() item {
 }
 
 // lex creates a new scanner for the input string.
-func lex(input string, preserveFormatting bool) *lexer {
-	l := &lexer{
-		preserveFormatting: preserveFormatting,
+func lex(input string) *lexer {
+	return &lexer{
 		input: input,
 		items: make(chan item),
 		runes: make([]rune, 0, 32),
 	}
-	go l.run()
-	return l
 }
 
 // run runs the state machine for the lexer.
@@ -190,37 +187,36 @@ func lexBeforeKey(l *lexer) stateFn {
 		l.emit(itemEOF)
 		return nil
 
-	case isEOL(r):
-		if l.preserveFormatting {
-			// treat as part of the next key's comments block
-			// add the EOL rune r as the comment's prefix
-			l.appendRune(r)
-			l.backup()
-			return lexComment
-		} else {
-			l.ignore()
-			return lexBeforeKey
-		}
-
-	case isComment(r):
-		if l.preserveFormatting {
-			// treat as part of the next key's comments block
-			// use existing prefix r as the comment's prefix
-			l.appendRune(r)
-		} else {
-			// use "#" as the comment's prefix
-			l.appendRune('#')
-		}
+	case isEOL(r) && l.keepWS:
+		// treat as part of the next key's comments block
+		// add the EOL rune r as the comment's prefix
+		l.appendRune(r)
+		l.backup()
 		return lexComment
 
+	case isEOL(r):
+		l.ignore()
+		return lexBeforeKey
+
+	case isComment(r) && l.keepWS:
+		// treat as part of the next key's comments block
+		// use existing prefix r as the comment's prefix
+		l.appendRune(r)
+		return lexComment
+
+	case isComment(r):
+		// use "#" as the comment's prefix
+		l.appendRune('#')
+		return lexComment
+
+	case isWhitespace(r) && l.keepWS:
+		// treat as part of the next key's comments block
+		// add the whitespace rune r as the comment's prefix
+		l.appendRune(r)
+		return lexBeforeKey
+
 	case isWhitespace(r):
-		if l.preserveFormatting {
-			// treat as part of the next key's comments block
-			// add the whitespace rune r as the comment's prefix
-			l.appendRune(r)
-		} else {
-			l.ignore()
-		}
+		l.ignore()
 		return lexBeforeKey
 
 	default:
@@ -231,7 +227,7 @@ func lexBeforeKey(l *lexer) stateFn {
 
 // lexComment scans a comment line. The comment character has already been scanned.
 func lexComment(l *lexer) stateFn {
-	if ! l.preserveFormatting {
+	if ! l.keepWS {
 		l.acceptRun(whitespace)
 		l.ignore()
 	}
@@ -239,7 +235,7 @@ func lexComment(l *lexer) stateFn {
 
 		switch r := l.next(); {
 		case isEOF(r):
-			if ! l.preserveFormatting {
+			if ! l.keepWS {
 				l.ignore()
 			}
 			l.emit(itemEOF)

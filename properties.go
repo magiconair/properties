@@ -48,7 +48,7 @@ func PanicHandler(err error) {
 
 // -----------------------------------------------------------------------------
 
-type Comment struct {
+type prefixedComment struct {
 	prefix string // prefix type (#, !, or "" to suppress a prefix)
 	val string   // The value of this item.
 }
@@ -70,13 +70,13 @@ type Properties struct {
 	m map[string]string
 
 	// Stores the comments per key.
-	c map[string][]Comment
+	c map[string][]prefixedComment
 
 	// Stores the keys in order of appearance.
 	k []string
 
-	// Preserve formatting (whitespace/comment prefix) when reading in properties
-	PreserveFormatting bool
+	// Stores any trailing comments if we want to preserveFormatting
+	trailingComments []prefixedComment
 }
 
 // NewProperties creates a new Properties struct with the default
@@ -86,7 +86,7 @@ func NewProperties() *Properties {
 		Prefix:  "${",
 		Postfix: "}",
 		m:       map[string]string{},
-		c:       map[string][]Comment{},
+		c:       map[string][]prefixedComment{},
 		k:       []string{},
 	}
 }
@@ -139,7 +139,7 @@ func (p *Properties) MustGet(key string) string {
 
 // ClearComments removes the comments for all keys.
 func (p *Properties) ClearComments() {
-	p.c = map[string][]Comment{}
+	p.c = map[string][]prefixedComment{}
 }
 
 // ----------------------------------------------------------------------------
@@ -171,14 +171,14 @@ func (p *Properties) GetComments(key string) []string {
 
 // SetComment sets the comment for the key.
 func (p *Properties) SetComment(key, comment string) {
-	p.c[key] = []Comment{{"#", comment}}
+	p.c[key] = []prefixedComment{{"#", comment}}
 }
 
 // ----------------------------------------------------------------------------
 
 // SetComment sets the comment for the key.
 func (p *Properties) SetCommentWithPrefix(key, prefix string, comment string) {
-	p.c[key] = []Comment{{prefix, comment}}
+	p.c[key] = []prefixedComment{{prefix, comment}}
 }
 
 // ----------------------------------------------------------------------------
@@ -198,9 +198,9 @@ func (p *Properties) SetCommentsWithPrefix(key string, prefix string, comments [
 		delete(p.c, key)
 		return
 	}
-	var list = make([]Comment, 0, len(comments))
+	var list = make([]prefixedComment, 0, len(comments))
 	for _, comment := range comments {
-		list = append(list, Comment{prefix, comment})
+		list = append(list, prefixedComment{prefix, comment})
 	}
 	p.c[key] = list
 }
@@ -688,8 +688,8 @@ func (p *Properties) WriteCommentWithFormatting(w io.Writer, prefix string, enc 
 		}
 		n += x
 	}
-	if comments, exists := p.c[""]; exists && preserveFormatting {
-		for _, c := range comments {
+	if preserveFormatting {
+		for _, c := range p.trailingComments {
 			actualPrefix := prefix
 			if prefix == "" && c.prefix != "\n" {
 				// No prefix passed in and this is not just a newline comment, so use the stored prefix

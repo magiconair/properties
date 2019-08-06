@@ -15,31 +15,38 @@ type parser struct {
 }
 
 func parse(input string, preserveFormatting bool) (properties *Properties, err error) {
-	p := &parser{lex: lex(input, preserveFormatting)}
+	l := lex(input)
+	l.keepWS = preserveFormatting
+	go l.run()
+	p := &parser{lex: l}
 	defer p.recover(&err)
 
 	properties = NewProperties()
-	properties.PreserveFormatting = preserveFormatting
 	key := ""
-	comments := []Comment{}
+	comments := []prefixedComment{}
 
 	for {
 		token := p.expectOneOf(itemComment, itemKey, itemEOF)
 		switch token.typ {
 		case itemEOF:
-			if preserveFormatting && (len(comments) > 0 || token.val != "") {
-				// There are comments at the end of the input that are not tied to a particular key
-				// Save these off against a special empty key when preserving formatting
-				if token.val != "" {
-					prefixIndex := 0
-					// Include leading whitespace into the prefix
-					prefixIndex = strings.Index(token.val, strings.TrimSpace(token.val))
-					prefix := token.val[0 : prefixIndex+1]
-					comment := Comment{prefix, token.val[prefixIndex+1 : len(token.val)]}
-					comments = append(comments, comment)
-				}
-				properties.c[""] = comments
+			if !preserveFormatting || (len(comments) == 0 && token.val == "") {
+				goto done
 			}
+			// There are comments at the end of the input that are not tied to a particular key
+			// Save these off when preserving formatting
+			if token.val == "" {
+				// Save off previously parsed trailing comments
+				properties.trailingComments = comments
+				goto done
+			}
+			// Need to save off the last comment line as well
+			prefixIndex := 0
+			// Include leading whitespace into the prefix
+			prefixIndex = strings.Index(token.val, strings.TrimSpace(token.val))
+			prefix := token.val[0 : prefixIndex+1]
+			comment := prefixedComment{prefix, token.val[prefixIndex+1 : len(token.val)]}
+			comments = append(comments, comment)
+			properties.trailingComments = comments
 			goto done
 		case itemComment:
 			prefix := "#"
@@ -49,7 +56,7 @@ func parse(input string, preserveFormatting bool) (properties *Properties, err e
 				prefixIndex = strings.Index(token.val, strings.TrimSpace(token.val))
 				prefix = token.val[0:prefixIndex+1]
 			}
-			comment := Comment{prefix, token.val[prefixIndex+1:len(token.val)]}
+			comment := prefixedComment{prefix, token.val[prefixIndex+1:len(token.val)]}
 			comments = append(comments, comment)
 			continue
 		case itemKey:
@@ -62,7 +69,7 @@ func parse(input string, preserveFormatting bool) (properties *Properties, err e
 		token = p.expectOneOf(itemValue, itemEOF)
 		if len(comments) > 0 {
 			properties.c[key] = comments
-			comments = []Comment{}
+			comments = []prefixedComment{}
 		}
 		switch token.typ {
 		case itemEOF:
