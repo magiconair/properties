@@ -49,8 +49,8 @@ func PanicHandler(err error) {
 // -----------------------------------------------------------------------------
 
 type prefixedComment struct {
-	prefix string // prefix type (#, !, or "" to suppress a prefix)
-	val string   // The value of this item.
+	prefix string // prefix type (#, !)
+	val string    // The comment string after the prefix
 }
 
 // A Properties contains the key/value pairs from the properties input.
@@ -625,20 +625,17 @@ func (p *Properties) Write(w io.Writer, enc Encoding) (n int, err error) {
 
 // WriteComment writes all unexpanded 'key = value' pairs to the given writer.
 // If prefix is not empty then comments are written with a blank line and the
-// given prefix. The prefix should be either "#" or "!" to be compatible with
+// given prefix. The prefix should be either "# " or "! " to be compatible with
 // the properties file format. Otherwise, the properties parser will not be
 // able to read the file back in. It returns the number of bytes written and
 // any write error encountered.
 func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n int, err error) {
-	return p.WriteCommentWithFormatting(w, prefix, enc, false)
-}
-
-func (p *Properties) WriteCommentWithFormatting(w io.Writer, prefix string, enc Encoding, preserveFormatting bool) (n int, err error) {
 	var x int
+
 	for _, key := range p.k {
 		value := p.m[key]
 
-		if prefix != "" || preserveFormatting {
+		if prefix != "" {
 			if comments, ok := p.c[key]; ok {
 				// don't print comments if they are all empty
 				allEmpty := true
@@ -649,7 +646,7 @@ func (p *Properties) WriteCommentWithFormatting(w io.Writer, prefix string, enc 
 					}
 				}
 
-				if !allEmpty && !preserveFormatting {
+				if !allEmpty {
 					// add a blank line between entries but not at the top
 					if len(comments) > 0 && n > 0 {
 						x, err = fmt.Fprintln(w)
@@ -658,20 +655,11 @@ func (p *Properties) WriteCommentWithFormatting(w io.Writer, prefix string, enc 
 						}
 						n += x
 					}
-				}
-				if !allEmpty || preserveFormatting {
+
 					for _, c := range comments {
-						actualPrefix := prefix
-						if prefix == "" && c.prefix != "\n" {
-							// No prefix passed in and this is not just a newline comment, so use the stored prefix
-							actualPrefix = c.prefix
-						}
-						actualValue := c.val
-						if !preserveFormatting {
-							actualValue = strings.TrimSpace(c.val)
-						}
-						if preserveFormatting || strings.TrimSpace(actualValue) != "" {
-							x, err = fmt.Fprintf(w, "%s%s\n", actualPrefix, encode(actualValue, "", enc))
+						comment := strings.TrimSpace(c.val)
+						if comment != "" {
+							x, err = fmt.Fprintf(w, "%s%s\n", prefix, encode(comment, "", enc))
 							if err != nil {
 								return
 							}
@@ -688,20 +676,47 @@ func (p *Properties) WriteCommentWithFormatting(w io.Writer, prefix string, enc 
 		}
 		n += x
 	}
-	if preserveFormatting {
-		for _, c := range p.trailingComments {
-			actualPrefix := prefix
-			if prefix == "" && c.prefix != "\n" {
-				// No prefix passed in and this is not just a newline comment, so use the stored prefix
-				actualPrefix = c.prefix
+	return
+}
+
+// WriteFormattedComment writes all unexpanded 'key = value' pairs to the given writer.
+// Comments are written out with their original preserved formatting. It returns the number of bytes
+// written and any write error encountered.
+func (p *Properties) WriteFormattedComment(w io.Writer, enc Encoding) (n int, err error) {
+	var x int
+	for _, key := range p.k {
+		value := p.m[key]
+
+		if comments, ok := p.c[key]; ok {
+			for _, c := range comments {
+				prefix := ""
+				if (c.prefix != "\n") {
+					prefix = c.prefix
+				}
+				x, err = fmt.Fprintf(w, "%s%s\n", prefix, encode(c.val, "", enc))
+				if err != nil {
+					return
+				}
+				n += x
 			}
-			actualValue := c.val
-			x, err = fmt.Fprintf(w, "%s%s\n", actualPrefix, encode(actualValue, "", enc))
-			if err != nil {
-				return
-			}
-			n += x
 		}
+
+		x, err = fmt.Fprintf(w, "%s = %s\n", encode(key, " :", enc), encode(value, "", enc))
+		if err != nil {
+			return
+		}
+		n += x
+	}
+	for _, c := range p.trailingComments {
+		prefix := ""
+		if (c.prefix != "\n") {
+			prefix = c.prefix
+		}
+		x, err = fmt.Fprintf(w, "%s%s\n", prefix, encode(c.val, "", enc))
+		if err != nil {
+			return
+		}
+		n += x
 	}
 	return
 }

@@ -198,20 +198,15 @@ func lexBeforeKey(l *lexer) stateFn {
 		l.ignore()
 		return lexBeforeKey
 
-	case isComment(r) && l.keepWS:
+	case isComment(r):
 		// treat as part of the next key's comments block
 		// use existing prefix r as the comment's prefix
 		l.appendRune(r)
 		return lexComment
 
-	case isComment(r):
-		// use "#" as the comment's prefix
-		l.appendRune('#')
-		return lexComment
-
 	case isWhitespace(r) && l.keepWS:
 		// treat as part of the next key's comments block
-		// add the whitespace rune r as the comment's prefix
+		// add the whitespace rune r as part of the comment's prefix
 		l.appendRune(r)
 		return lexBeforeKey
 
@@ -232,7 +227,6 @@ func lexComment(l *lexer) stateFn {
 		l.ignore()
 	}
 	for {
-
 		switch r := l.next(); {
 		case isEOF(r):
 			if ! l.keepWS {
