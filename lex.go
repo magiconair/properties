@@ -60,14 +60,15 @@ type stateFn func(*lexer) stateFn
 
 // lexer holds the state of the scanner.
 type lexer struct {
-	input   string    // the string being scanned
-	state   stateFn   // the next lexing function to enter
-	pos     int       // current position in the input
-	start   int       // start position of this item
-	width   int       // width of last rune read from input
-	lastPos int       // position of most recent item returned by nextItem
-	runes   []rune    // scanned runes for this item
-	items   chan item // channel of scanned items
+	input         string    // the string being scanned
+	state         stateFn   // the next lexing function to enter
+	pos           int       // current position in the input
+	start         int       // start position of this item
+	width         int       // width of last rune read from input
+	lastPos       int       // position of most recent item returned by nextItem
+	runes         []rune    // scanned runes for this item
+	items         chan item // channel of scanned items
+	keepBackslash bool      // true: doesn't drop the backslash \ that isn't precede any of " :=fnrt", default is false
 }
 
 // next returns the next rune in the input.
@@ -162,11 +163,12 @@ func (l *lexer) nextItem() item {
 }
 
 // lex creates a new scanner for the input string.
-func lex(input string) *lexer {
+func lex(input string, keepBackslash bool) *lexer {
 	l := &lexer{
-		input: input,
-		items: make(chan item),
-		runes: make([]rune, 0, 32),
+		input:         input,
+		items:         make(chan item),
+		runes:         make([]rune, 0, 32),
+		keepBackslash: keepBackslash,
 	}
 	go l.run()
 	return l
@@ -321,6 +323,9 @@ func (l *lexer) scanEscapeSequence() error {
 
 	// silently drop the escape character and append the rune as is
 	default:
+		if l.keepBackslash {
+			l.appendRune('\\') // Assumes the escape character is put on purpose
+		}
 		l.appendRune(r)
 		return nil
 	}

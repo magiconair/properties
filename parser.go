@@ -13,11 +13,12 @@ type parser struct {
 	lex *lexer
 }
 
-func parse(input string) (properties *Properties, err error) {
-	p := &parser{lex: lex(input)}
+func parse(input string, keepBackslash bool) (properties *Properties, err error) {
+	p := &parser{lex: lex(input, keepBackslash)}
 	defer p.recover(&err)
 
 	properties = NewProperties()
+	properties.KeepBackslash = keepBackslash
 	key := ""
 	comments := []string{}
 

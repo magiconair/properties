@@ -55,7 +55,8 @@ type Properties struct {
 	// Pre-/Postfix for property expansion.
 	Prefix  string
 	Postfix string
-
+	// KeepBackslash for lexer
+	KeepBackslash bool
 	// DisableExpansion controls the expansion of properties on Get()
 	// and the check for circular references on Set(). When set to
 	// true Properties behaves like a simple key/value store and does
@@ -76,17 +77,18 @@ type Properties struct {
 // configuration for "${key}" expressions.
 func NewProperties() *Properties {
 	return &Properties{
-		Prefix:  "${",
-		Postfix: "}",
-		m:       map[string]string{},
-		c:       map[string][]string{},
-		k:       []string{},
+		Prefix:        "${",
+		Postfix:       "}",
+		KeepBackslash: false,
+		m:             map[string]string{},
+		c:             map[string][]string{},
+		k:             []string{},
 	}
 }
 
 // Load reads a buffer into the given Properties struct.
 func (p *Properties) Load(buf []byte, enc Encoding) error {
-	l := &Loader{Encoding: enc, DisableExpansion: p.DisableExpansion}
+	l := &Loader{Encoding: enc, DisableExpansion: p.DisableExpansion, KeepBackslash: p.KeepBackslash}
 	newProperties, err := l.LoadBytes(buf)
 	if err != nil {
 		return err
