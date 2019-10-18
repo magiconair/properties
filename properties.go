@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -584,6 +585,12 @@ func (p *Properties) String() string {
 		s = fmt.Sprintf("%s%s = %s\n", s, key, value)
 	}
 	return s
+}
+
+// Sort sorts the properties keys in alphabetical order.
+// This is helpfully before writing the properties.
+func (p *Properties) Sort() {
+	sort.Strings(p.k)
 }
 
 // Write writes all unexpanded 'key = value' pairs to the given writer.
