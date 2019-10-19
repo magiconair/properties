@@ -70,6 +70,9 @@ type Properties struct {
 
 	// Stores the keys in order of appearance.
 	k []string
+
+	// WriteSeparator specifies the separator of key and value while writing the properties.
+	WriteSeparator string
 }
 
 // NewProperties creates a new Properties struct with the default
@@ -642,8 +645,10 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 				}
 			}
 		}
-
-		x, err = fmt.Fprintf(w, "%s = %s\n", encode(key, " :", enc), encode(value, "", enc))
+        if p.WriteSeparator == "" {
+			p.WriteSeparator = " = "
+		}
+		x, err = fmt.Fprintf(w, "%s%s%s\n", encode(key, " :", enc), p.WriteSeparator, encode(value, "", enc))
 		if err != nil {
 			return
 		}
