@@ -11,6 +11,7 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -551,7 +552,16 @@ func TestMustGetParsedDuration(t *testing.T) {
 	input := "key = 123ms\nkey2 = ghi"
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetParsedDuration("key"), 123*time.Millisecond)
-	assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, "time: invalid duration ghi")
+
+	ver := runtime.Version()
+	switch {
+	// gotip and go1.15 will return `time: invalid duration "ghi"`
+	case !strings.HasPrefix(ver, "go") || strings.HasPrefix(ver, "go1.15"):
+		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
+	default:
+		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration ghi`)
+	}
+
 	assert.Panic(t, func() { p.MustGetParsedDuration("invalid") }, "unknown property: invalid")
 }
 
