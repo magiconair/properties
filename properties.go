@@ -833,6 +833,8 @@ func escape(r rune, special string) string {
 		return "\\r"
 	case '\t':
 		return "\\t"
+	case '\\':
+		return "\\\\"
 	default:
 		if strings.ContainsRune(special, r) {
 			return "\\" + string(r)
