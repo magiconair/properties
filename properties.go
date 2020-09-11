@@ -115,7 +115,7 @@ func (p *Properties) Get(key string) (value string, ok bool) {
 	// circular references and malformed expressions
 	// so we panic if we still get an error here.
 	if err != nil {
-		ErrorHandler(fmt.Errorf("%s in %q", err, key+" = "+v))
+		ErrorHandler(err)
 	}
 
 	return expanded, true
@@ -766,7 +766,7 @@ func expand(s string, keys []string, prefix, postfix string, values map[string]s
 
 		for _, k := range keys {
 			if key == k {
-				return "", fmt.Errorf("circular reference")
+				return "", fmt.Errorf("circular reference in %q", key + " = " + prefix + k + postfix)
 			}
 		}
 
