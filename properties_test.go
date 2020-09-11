@@ -796,7 +796,7 @@ func TestSetValue(t *testing.T) {
 func TestMustSet(t *testing.T) {
 	input := "key=${key}"
 	p := mustParse(t, input)
-	assert.Panic(t, func() { p.MustSet("key", "${key}") }, "circular reference .*")
+	assert.Panic(t, func() { p.MustSet("key", "${key}") }, `circular reference in "key = \$\{key\}"`)
 }
 
 func TestWrite(t *testing.T) {
