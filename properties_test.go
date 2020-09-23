@@ -11,6 +11,7 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -134,8 +135,8 @@ var errorTests = []struct {
 	{"key\\u123", "invalid unicode literal"},
 
 	// circular references
-	{"key=${key}", "circular reference in:\nkey=${key}"},
-	{"key1=${key2}\nkey2=${key1}", "circular reference in:\nkey1=${key2}\nkey2=${key1}"},
+	{"key=${key}", `circular reference in:\nkey=\$\{key\}`},
+	{"key1=${key2}\nkey2=${key1}", `circular reference in:\n(key1=\$\{key2\}\nkey2=\$\{key1\}|key2=\$\{key1\}\nkey1=\$\{key2\})`},
 
 	// malformed expressions
 	{"key=${ke", "malformed expression"},
@@ -451,7 +452,8 @@ func TestErrors(t *testing.T) {
 	for _, test := range errorTests {
 		_, err := Load([]byte(test.input), ISO_8859_1)
 		assert.Equal(t, err != nil, true, fmt.Sprintf("want error: %s", test.input))
-		assert.Equal(t, strings.Contains(err.Error(), test.msg), true, fmt.Sprintf("expected %s, got %s", test.msg, err.Error()))
+		re := regexp.MustCompile(test.msg)
+		assert.Equal(t, re.MatchString(err.Error()), true, fmt.Sprintf("expected %s, got %s", test.msg, err.Error()))
 	}
 }
 
