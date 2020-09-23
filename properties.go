@@ -766,7 +766,12 @@ func expand(s string, keys []string, prefix, postfix string, values map[string]s
 
 		for _, k := range keys {
 			if key == k {
-				return "", fmt.Errorf("circular reference in %q", key + " = " + prefix + k + postfix)
+				var b strings.Builder
+				b.WriteString("circular reference in:\n")
+				for _, k1 := range keys {
+					fmt.Fprintf(&b, "%s=%s\n", k1, values[k1])
+				}
+				return "", fmt.Errorf(b.String())
 			}
 		}
 

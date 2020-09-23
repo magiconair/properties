@@ -134,8 +134,8 @@ var errorTests = []struct {
 	{"key\\u123", "invalid unicode literal"},
 
 	// circular references
-	{"key=${key}", "circular reference"},
-	{"key1=${key2}\nkey2=${key1}", "circular reference"},
+	{"key=${key}", "circular reference in:\nkey=${key}"},
+	{"key1=${key2}\nkey2=${key1}", "circular reference in:\nkey1=${key2}\nkey2=${key1}"},
 
 	// malformed expressions
 	{"key=${ke", "malformed expression"},
@@ -450,8 +450,8 @@ func TestComplex(t *testing.T) {
 func TestErrors(t *testing.T) {
 	for _, test := range errorTests {
 		_, err := Load([]byte(test.input), ISO_8859_1)
-		assert.Equal(t, err != nil, true, "want error")
-		assert.Equal(t, strings.Contains(err.Error(), test.msg), true)
+		assert.Equal(t, err != nil, true, fmt.Sprintf("want error: %s", test.input))
+		assert.Equal(t, strings.Contains(err.Error(), test.msg), true, fmt.Sprintf("expected %s, got %s", test.msg, err.Error()))
 	}
 }
 
@@ -796,7 +796,8 @@ func TestSetValue(t *testing.T) {
 func TestMustSet(t *testing.T) {
 	input := "key=${key}"
 	p := mustParse(t, input)
-	assert.Panic(t, func() { p.MustSet("key", "${key}") }, `circular reference in "key = \$\{key\}"`)
+	e := `circular reference in:\nkey=\$\{key\}`
+	assert.Panic(t, func() { p.MustSet("key", "${key}") }, e)
 }
 
 func TestWrite(t *testing.T) {
