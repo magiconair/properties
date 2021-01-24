@@ -560,12 +560,17 @@ func TestMustGetParsedDuration(t *testing.T) {
 	assert.Equal(t, p.MustGetParsedDuration("key"), 123*time.Millisecond)
 
 	ver := runtime.Version()
-	switch {
-	// gotip and go1.15 will return `time: invalid duration "ghi"`
-	case !strings.HasPrefix(ver, "go") || strings.HasPrefix(ver, "go1.15"):
-		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
-	default:
-		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration ghi`)
+	if strings.HasPrefix(ver, "go") {
+		ver_minor := ver[4:6]
+		switch {
+		// gotip and go1.15 will return `time: invalid duration "ghi"`
+		case ver_minor >= "15":
+			assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
+		default:
+			assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration ghi`)
+		}
+	} else {
+			assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
 	}
 
 	assert.Panic(t, func() { p.MustGetParsedDuration("invalid") }, "unknown property: invalid")
