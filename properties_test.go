@@ -180,7 +180,6 @@ var writeCommentTests = []struct {
 	// prevent double encoding \\ -> \\\\ -> \\\\\\\\
 	{"# com\\\\ment\nkey = value", "# com\\\\ment\nkey = value\n", "ISO-8859-1"},
 
-
 	// UTF-8 tests
 	{"key = value", "key = value\n", "UTF-8"},
 	{"# comment⌘\nkey = value⌘", "# comment⌘\nkey = value⌘\n", "UTF-8"},
@@ -564,20 +563,17 @@ func TestMustGetParsedDuration(t *testing.T) {
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetParsedDuration("key"), 123*time.Millisecond)
 
-	ver := runtime.Version()
-	if strings.HasPrefix(ver, "go") {
-		ver_minor := ver[4:6]
-		switch {
-		// gotip and go1.15 will return `time: invalid duration "ghi"`
-		case ver_minor >= "15":
-			assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
-		default:
-			assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration ghi`)
-		}
-	} else {
-			assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
+	// runtime.Version is go1.x.y or devel or <gitsha>
+	// ver[0] == major version, ver[1] == minor version
+	ver := strings.Split(runtime.Version(), ".")
+	switch {
+	case strings.HasPrefix(ver[0], "go") && ver[1] >= "15":
+		// go1.15 ... gotip
+		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
+	default:
+		// go1.x..go1.14
+		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration ghi`)
 	}
-
 	assert.Panic(t, func() { p.MustGetParsedDuration("invalid") }, "unknown property: invalid")
 }
 
