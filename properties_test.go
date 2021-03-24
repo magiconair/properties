@@ -13,6 +13,7 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -563,11 +564,17 @@ func TestMustGetParsedDuration(t *testing.T) {
 	p := mustParse(t, input)
 	assert.Equal(t, p.MustGetParsedDuration("key"), 123*time.Millisecond)
 
-	// runtime.Version is go1.x.y or devel or <gitsha>
-	// ver[0] == major version, ver[1] == minor version
+	// parse runtime.Version into major and minor version
+	var major, minor int
 	ver := strings.Split(runtime.Version(), ".")
+	devel := !strings.HasPrefix(ver[0], "go")
+	major, _ = strconv.Atoi(strings.TrimPrefix(ver[0], "go"))
+	if len(ver) > 1 {
+		minor, _ = strconv.Atoi(ver[1])
+	}
+
 	switch {
-	case strings.HasPrefix(ver[0], "go") && ver[1] >= "15":
+	case devel || major == 1 && minor >= 15:
 		// go1.15 ... gotip
 		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
 	default:
