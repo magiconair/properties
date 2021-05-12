@@ -825,7 +825,7 @@ func TestWrite(t *testing.T) {
 			n, err = p.Write(buf, ISO_8859_1)
 		}
 		assert.Equal(t, err, nil)
-		s := string(buf.Bytes())
+		s := buf.String()
 		assert.Equal(t, n, len(test.output), fmt.Sprintf("input=%q expected=%q obtained=%q", test.input, test.output, s))
 		assert.Equal(t, s, test.output, fmt.Sprintf("input=%q expected=%q obtained=%q", test.input, test.output, s))
 	}
@@ -844,7 +844,7 @@ func TestWriteComment(t *testing.T) {
 			n, err = p.WriteComment(buf, "# ", ISO_8859_1)
 		}
 		assert.Equal(t, err, nil)
-		s := string(buf.Bytes())
+		s := buf.String()
 		assert.Equal(t, n, len(test.output), fmt.Sprintf("input=%q expected=%q obtained=%q", test.input, test.output, s))
 		assert.Equal(t, s, test.output, fmt.Sprintf("input=%q expected=%q obtained=%q", test.input, test.output, s))
 	}
