@@ -6,7 +6,6 @@ package properties
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"math"
 	"os"
@@ -20,8 +19,6 @@ import (
 
 	"github.com/magiconair/properties/assert"
 )
-
-var verbose = flag.Bool("verbose", false, "Verbose output")
 
 func init() {
 	ErrorHandler = PanicHandler
@@ -1005,11 +1002,4 @@ func mustParse(t *testing.T, s string) *Properties {
 		t.Fatalf("parse failed with %s", err)
 	}
 	return p
-}
-
-// prints to stderr if the -verbose flag was given.
-func printf(format string, args ...interface{}) {
-	if *verbose {
-		fmt.Fprintf(os.Stderr, format, args...)
-	}
 }
