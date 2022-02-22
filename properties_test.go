@@ -554,14 +554,6 @@ func TestGetParsedDuration(t *testing.T) {
 	}
 }
 
-func TestMustGetParsedDuration(t *testing.T) {
-	input := "key = 123ms\nkey2 = ghi"
-	p := mustParse(t, input)
-	assert.Equal(t, p.MustGetParsedDuration("key"), 123*time.Millisecond)
-	assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
-	assert.Panic(t, func() { p.MustGetParsedDuration("invalid") }, "unknown property: invalid")
-}
-
 func TestGetFloat64(t *testing.T) {
 	for _, test := range floatTests {
 		p := mustParse(t, test.input)
