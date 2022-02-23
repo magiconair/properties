@@ -11,8 +11,6 @@ import (
 	"os"
 	"reflect"
 	"regexp"
-	"runtime"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -554,31 +552,6 @@ func TestGetParsedDuration(t *testing.T) {
 		assert.Equal(t, p.Len(), 1)
 		assert.Equal(t, p.GetParsedDuration(test.key, test.def), test.value)
 	}
-}
-
-func TestMustGetParsedDuration(t *testing.T) {
-	input := "key = 123ms\nkey2 = ghi"
-	p := mustParse(t, input)
-	assert.Equal(t, p.MustGetParsedDuration("key"), 123*time.Millisecond)
-
-	// parse runtime.Version into major and minor version
-	var major, minor int
-	ver := strings.Split(runtime.Version(), ".")
-	devel := !strings.HasPrefix(ver[0], "go")
-	major, _ = strconv.Atoi(strings.TrimPrefix(ver[0], "go"))
-	if len(ver) > 1 {
-		minor, _ = strconv.Atoi(ver[1])
-	}
-
-	switch {
-	case devel || major == 1 && minor >= 15:
-		// go1.15 ... gotip
-		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration "ghi"`)
-	default:
-		// go1.x..go1.14
-		assert.Panic(t, func() { p.MustGetParsedDuration("key2") }, `time: invalid duration ghi`)
-	}
-	assert.Panic(t, func() { p.MustGetParsedDuration("invalid") }, "unknown property: invalid")
 }
 
 func TestGetFloat64(t *testing.T) {
