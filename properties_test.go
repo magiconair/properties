@@ -913,6 +913,37 @@ func TestLoad(t *testing.T) {
 
 // ----------------------------------------------------------------------------
 
+var inputs = []struct {
+	input int
+}{
+	{input: 1e2},
+	{input: 1e3},
+	{input: 1e4},
+	{input: 1e5},
+}
+
+func BenchmarkMerge(b *testing.B) {
+	for _, v := range inputs {
+		p := generateProperties(v.input)
+		b.Run(fmt.Sprintf("num_properties_%d", v.input), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				p.Merge(p)
+			}
+		})
+	}
+}
+
+func generateProperties(n int) *Properties {
+	p := NewProperties()
+	for i := 0; i < n; i++ {
+		s := fmt.Sprintf("%v", i)
+		p.Set(s, s)
+	}
+	return p
+}
+
+// ----------------------------------------------------------------------------
+
 // tests all combinations of delimiters, leading and/or trailing whitespace and newlines.
 func testWhitespaceAndDelimiterCombinations(t *testing.T, key, value string) {
 	whitespace := []string{"", " ", "\f", "\t"}
