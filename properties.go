@@ -700,21 +700,16 @@ func (p *Properties) Delete(key string) {
 
 // Merge merges properties, comments and keys from other *Properties into p
 func (p *Properties) Merge(other *Properties) {
+	for _, k := range other.k {
+		if _, ok := p.m[k]; !ok {
+			p.k = append(p.k, k)
+		}
+	}
 	for k, v := range other.m {
 		p.m[k] = v
 	}
 	for k, v := range other.c {
 		p.c[k] = v
-	}
-
-outer:
-	for _, otherKey := range other.k {
-		for _, key := range p.k {
-			if otherKey == key {
-				continue outer
-			}
-		}
-		p.k = append(p.k, otherKey)
 	}
 }
 
