@@ -913,19 +913,20 @@ func TestLoad(t *testing.T) {
 
 // ----------------------------------------------------------------------------
 
-var inputs = []struct {
-	input int
-}{
-	{input: 1e2},
-	{input: 1e3},
-	{input: 1e4},
-	{input: 1e5},
-}
-
+// GOMAXPROCS=1 go test -run='^$' -bench '^BenchmarkMerge$' github.com/magiconair/properties
+// goos: darwin
+// goarch: arm64
+// pkg: github.com/magiconair/properties
+// BenchmarkMerge/num_properties_100         	  469435	      2533 ns/op
+// BenchmarkMerge/num_properties_1000        	   39649	     29420 ns/op
+// BenchmarkMerge/num_properties_10000       	    2786	    427934 ns/op
+// BenchmarkMerge/num_properties_100000      	     244	   4749766 ns/op
+// PASS
+// ok  	github.com/magiconair/properties	6.842s
 func BenchmarkMerge(b *testing.B) {
-	for _, v := range inputs {
-		p := generateProperties(v.input)
-		b.Run(fmt.Sprintf("num_properties_%d", v.input), func(b *testing.B) {
+	for _, n := range []int{1e2, 1e3, 1e4, 1e5} {
+		p := generateProperties(n)
+		b.Run(fmt.Sprintf("num_properties_%d", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				p.Merge(p)
 			}
