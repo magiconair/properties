@@ -1,5 +1,13 @@
 ## Changelog
 
+### [1.8.7](https://github.com/magiconair/properties/tree/v1.8.7) - 08 Dec 2022
+
+ * [PR #65](https://github.com/magiconair/properties/pull/65): Speedup Merge
+
+   Thanks to [@AdityaVallabh](https://github.com/AdityaVallabh) for the patch.
+
+ * [PR #66](https://github.com/magiconair/properties/pull/66): use github actions
+
 ### [1.8.6](https://github.com/magiconair/properties/tree/v1.8.6) - 23 Feb 2022
 
  * [PR #57](https://github.com/magiconair/properties/pull/57):Fix "unreachable code" lint error
