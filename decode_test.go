@@ -277,6 +277,31 @@ func TestDecodeMap(t *testing.T) {
 	testDecode(t, in, &X{}, out)
 }
 
+func TestDecodeToStringMap(t *testing.T) {
+	type S struct {
+		A string
+	}
+	X := make(map[string]interface{})
+	in := `
+	A.foo=bar
+	A.bar=bang
+	B.foo=a;b;c
+	B.bar=1;2;3
+	C.foo.one=1
+	C.foo.two=2
+	C.bar.three=3
+	C.bar.four=4
+	D.foo.a=bar
+	`
+	out := &map[string]interface{}{
+		"A": map[string]interface{}{"foo": "bar", "bar": "bang"},
+		"B": map[string]interface{}{"foo": []string{"a", "b", "c"}, "bar": []string{"1", "2", "3"}},
+		"C": map[string]interface{}{"foo": map[string]interface{}{"one": "1", "two": "2"}, "bar": map[string]interface{}{"three": "3", "four": "4"}},
+		"D": map[string]interface{}{"foo": map[string]interface{}{"a": "bar"}},
+	}
+	testDecode(t, in, &X, out)
+}
+
 func testDecode(t *testing.T, in string, v, out interface{}) {
 	p, err := parse(in)
 	if err != nil {
