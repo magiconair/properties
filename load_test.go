@@ -82,6 +82,25 @@ func TestLoadFiles(t *testing.T) {
 	assertKeyValues(t, "", p, "key", "value", "key2", "value2")
 }
 
+func TestLoadFilesWithEnvOverride(t *testing.T) {
+	tf := make(tempFiles, 0)
+	defer tf.removeAll()
+
+	filename := tf.makeFile("thrift.client=proxy")
+	filename2 := tf.makeFile("thrift.MyCamelCase=true")
+
+	os.Setenv("MP_THRIFT_CLIENT", "chicken")
+	os.Setenv("MP_THRIFT_MYCAMELCASE", "false")
+	defer os.Unsetenv("MP_THRIFT_CLIENT")
+	defer os.Unsetenv("MP_THRIFT_MYCAMELCASE")
+
+	p := MustLoadFilesWithEnvOverrides([]string{filename, filename2}, ISO_8859_1, false, "MP_")
+	assertKeyValues(t, "", p, "thrift.client", "chicken", "thrift.MyCamelCase", "false")
+
+	p = MustLoadFilesWithEnvOverrides([]string{filename, filename2}, ISO_8859_1, false, "")
+	assertKeyValues(t, "", p, "thrift.client", "proxy", "thrift.MyCamelCase", "true")
+}
+
 func TestLoadExpandedFile(t *testing.T) {
 	tf := make(tempFiles, 0)
 	defer tf.removeAll()

@@ -237,6 +237,34 @@ func MustLoadFiles(filenames []string, enc Encoding, ignoreMissing bool) *Proper
 	return must(LoadFiles(filenames, enc, ignoreMissing))
 }
 
+// MustLoadFilesWithEnvOverrides reads multiple files in the given order
+// into a Properties struct and panics on error. If 'ignoreMissing' is
+// true then non-existent files will not be reported as error. After loading
+// MustLoadFilesWithEnvOverrides checks for environment variables in the pattern
+// {envPrefix}SOME_NAME=val and converts the key to a property name by substituting
+// the _ for dots and removing the envPrefix. If this converted key matches any of
+// the loaded properties from the files, it will override the value of the file
+// loaded property with the value of the environment variable.
+func MustLoadFilesWithEnvOverrides(filenames []string, enc Encoding, ignoreMissing bool, envPrefix string) *Properties {
+	propsFromFile := MustLoadFiles(filenames, enc, ignoreMissing)
+
+	for _, e := range os.Environ() {
+		pair := strings.Split(e, "=")
+		key := pair[0]
+		if envPrefix != "" && strings.HasPrefix(key, envPrefix) {
+			envToPropertyName := strings.ToLower(strings.Replace(key[3:], "_", ".", -1))
+			environmentVariableValue := os.Getenv(key)
+
+			envToPropertyName = findOriginalKeyRegardlessOfCase(envToPropertyName, propsFromFile)
+
+			LogPrintf("Overriding property %s with environment variable %s", envToPropertyName, key)
+			propsFromFile.MustSet(envToPropertyName, environmentVariableValue)
+		}
+	}
+
+	return propsFromFile
+}
+
 // MustLoadURL reads the content of a URL into a Properties struct and
 // panics on error.
 func MustLoadURL(url string) *Properties {
@@ -263,6 +291,15 @@ func must(p *Properties, err error) *Properties {
 		ErrorHandler(err)
 	}
 	return p
+}
+
+func findOriginalKeyRegardlessOfCase(key string, props *Properties) string {
+	for _, origKey := range props.Keys() {
+		if strings.EqualFold(origKey, key) {
+			return origKey
+		}
+	}
+	return key
 }
 
 // expandName expands ${ENV_VAR} expressions in a name.
