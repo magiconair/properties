@@ -53,11 +53,11 @@ func doesPanic(skip int, fn func(), expr string) (err string) {
 			return
 		}
 		var v string
-		switch r.(type) {
+		switch r := r.(type) {
 		case error:
-			v = r.(error).Error()
+			v = r.Error()
 		case string:
-			v = r.(string)
+			v = r
 		}
 		err = matches(skip, v, expr)
 	}()
