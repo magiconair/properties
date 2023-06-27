@@ -62,6 +62,8 @@ type Properties struct {
 	// true Properties behaves like a simple key/value store and does
 	// not check for circular references on Get() or on Set().
 	DisableExpansion bool
+	// HandleDefaultPlaceholder controls the behavior of default placeholder
+	HandleDefaultPlaceholder HandleDefaultPlaceholder
 
 	// Stores the key/value pairs
 	m map[string]string
@@ -82,9 +84,12 @@ func NewProperties() *Properties {
 	return &Properties{
 		Prefix:  "${",
 		Postfix: "}",
-		m:       map[string]string{},
-		c:       map[string][]string{},
-		k:       []string{},
+
+		HandleDefaultPlaceholder: HandleDefaultPlaceholderWithEnv,
+
+		m: map[string]string{},
+		c: map[string][]string{},
+		k: []string{},
 	}
 }
 
@@ -731,14 +736,17 @@ func (p *Properties) expand(key, input string) (string, error) {
 	if p.Prefix == "" && p.Postfix == "" {
 		return input, nil
 	}
-
-	return expand(input, []string{key}, p.Prefix, p.Postfix, p.m)
+	handleDefaultPlaceholder := HandleDefaultPlaceholderWithEnv
+	if p.HandleDefaultPlaceholder != nil {
+		handleDefaultPlaceholder = p.HandleDefaultPlaceholder
+	}
+	return expand(input, []string{key}, p.Prefix, p.Postfix, p.m, handleDefaultPlaceholder)
 }
 
 // expand recursively expands expressions of '(prefix)key(postfix)' to their corresponding values.
 // The function keeps track of the keys that were already expanded and stops if it
 // detects a circular reference or a malformed expression of the form '(prefix)key'.
-func expand(s string, keys []string, prefix, postfix string, values map[string]string) (string, error) {
+func expand(s string, keys []string, prefix, postfix string, values map[string]string, handleDefaultPlaceholder HandleDefaultPlaceholder) (string, error) {
 	if len(keys) > maxExpansionDepth {
 		return "", fmt.Errorf("expansion too deep")
 	}
@@ -773,14 +781,29 @@ func expand(s string, keys []string, prefix, postfix string, values map[string]s
 
 		val, ok := values[key]
 		if !ok {
-			val = os.Getenv(key)
+			val, ok = handleDefaultPlaceholder(key)
+			if !ok {
+				return "", fmt.Errorf("unresovled key: %v", key)
+			}
 		}
-		new_val, err := expand(val, append(keys, key), prefix, postfix, values)
+		new_val, err := expand(val, append(keys, key), prefix, postfix, values, handleDefaultPlaceholder)
 		if err != nil {
 			return "", err
 		}
 		s = s[:start] + new_val + s[end+1:]
 	}
+}
+
+type HandleDefaultPlaceholder func(key string) (string, bool)
+
+func HandleDefaultPlaceholderWithEnv(key string) (string, bool) {
+	return os.Getenv(key), true
+}
+
+var _ HandleDefaultPlaceholder = os.LookupEnv
+
+func HandleDefaultPlaceholderDummy(key string) (string, bool) {
+	return "", false
 }
 
 // encode encodes a UTF-8 string to ISO-8859-1 and escapes some characters.
