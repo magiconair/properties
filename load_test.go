@@ -6,7 +6,6 @@ package properties
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -183,9 +182,9 @@ func (tf *tempFiles) makeFile(data string) string {
 }
 
 func (tf *tempFiles) makeFilePrefix(prefix, data string) string {
-	f, err := ioutil.TempFile("", prefix)
+	f, err := os.CreateTemp("", prefix)
 	if err != nil {
-		panic("ioutil.TempFile: " + err.Error())
+		panic("os.TempFile: " + err.Error())
 	}
 
 	// remember the temp file so that we can remove it later
