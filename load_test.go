@@ -166,6 +166,21 @@ func TestLoadAll(t *testing.T) {
 	assertKeyValues(t, "", p, "key", "value4", "key2", "value2")
 }
 
+func TestLoadReader(t *testing.T) {
+	tf := make(tempFiles, 0)
+	defer tf.removeAll()
+
+	filename := tf.makeFile("key=value")
+	r, err := os.Open(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := MustLoadReader(r, ISO_8859_1)
+
+	assert.Equal(t, p.Len(), 1)
+	assertKeyValues(t, "", p, "key", "value")
+}
+
 type tempFiles []string
 
 func (tf *tempFiles) removeAll() {
