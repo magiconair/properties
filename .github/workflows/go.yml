@@ -14,10 +14,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
-        id: go
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
 
-      - name: Run Tests (GOPATH)
+      - name: Run Tests
         run: go test ./...
