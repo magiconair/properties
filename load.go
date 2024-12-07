@@ -291,7 +291,7 @@ func must(p *Properties, err error) *Properties {
 // with an empty string. Malformed expressions like "${ENV_VAR" will
 // be reported as error.
 func expandName(name string) (string, error) {
-	return expand(name, []string{}, "${", "}", make(map[string]string))
+	return expand(name, []string{}, "${", "}", make(map[string]string), HandleDefaultPlaceholderWithEnv)
 }
 
 // Interprets a byte buffer either as an ISO-8859-1 or UTF-8 encoded string.
