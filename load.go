@@ -63,7 +63,7 @@ func (l *Loader) LoadReader(r io.Reader) (*Properties, error) {
 
 // LoadAll reads the content of multiple URLs or files in the given order into
 // a Properties struct. If IgnoreMissing is true then a 404 status code or
-// missing file will not be reported as error. Encoding sets the encoding for
+// missing file will not be reported as an error. Encoding sets the encoding for
 // files. For the URLs see LoadURL for the Content-Type header and the
 // encoding.
 func (l *Loader) LoadAll(names []string) (*Properties, error) {
@@ -98,7 +98,7 @@ func (l *Loader) LoadAll(names []string) (*Properties, error) {
 
 // LoadFile reads a file into a Properties struct.
 // If IgnoreMissing is true then a missing file will not be
-// reported as error.
+// reported as an error.
 func (l *Loader) LoadFile(filename string) (*Properties, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -202,7 +202,7 @@ func LoadReader(r io.Reader, enc Encoding) (*Properties, error) {
 
 // LoadFiles reads multiple files in the given order into
 // a Properties struct. If 'ignoreMissing' is true then
-// non-existent files will not be reported as error.
+// non-existent files will not be reported as an error.
 func LoadFiles(filenames []string, enc Encoding, ignoreMissing bool) (*Properties, error) {
 	l := &Loader{Encoding: enc, IgnoreMissing: ignoreMissing}
 	return l.LoadAll(filenames)
@@ -217,7 +217,7 @@ func LoadURL(url string) (*Properties, error) {
 
 // LoadURLs reads the content of multiple URLs in the given order into a
 // Properties struct. If IgnoreMissing is true then a 404 status code will
-// not be reported as error. See Loader#LoadURL for the Content-Type header
+// not be reported as an error. See Loader#LoadURL for the Content-Type header
 // and the encoding.
 func LoadURLs(urls []string, ignoreMissing bool) (*Properties, error) {
 	l := &Loader{Encoding: UTF8, IgnoreMissing: ignoreMissing}
@@ -226,7 +226,7 @@ func LoadURLs(urls []string, ignoreMissing bool) (*Properties, error) {
 
 // LoadAll reads the content of multiple URLs or files in the given order into a
 // Properties struct. If 'ignoreMissing' is true then a 404 status code or missing file will
-// not be reported as error. Encoding sets the encoding for files. For the URLs please see
+// not be reported as an error. Encoding sets the encoding for files. For the URLs please see
 // LoadURL for the Content-Type header and the encoding.
 func LoadAll(names []string, enc Encoding, ignoreMissing bool) (*Properties, error) {
 	l := &Loader{Encoding: enc, IgnoreMissing: ignoreMissing}
@@ -253,7 +253,7 @@ func MustLoadFile(filename string, enc Encoding) *Properties {
 
 // MustLoadFiles reads multiple files in the given order into
 // a Properties struct and panics on error. If 'ignoreMissing'
-// is true then non-existent files will not be reported as error.
+// is true then non-existent files will not be reported as an error.
 func MustLoadFiles(filenames []string, enc Encoding, ignoreMissing bool) *Properties {
 	return must(LoadFiles(filenames, enc, ignoreMissing))
 }
@@ -266,14 +266,14 @@ func MustLoadURL(url string) *Properties {
 
 // MustLoadURLs reads the content of multiple URLs in the given order into a
 // Properties struct and panics on error. If 'ignoreMissing' is true then a 404
-// status code will not be reported as error.
+// status code will not be reported as an error.
 func MustLoadURLs(urls []string, ignoreMissing bool) *Properties {
 	return must(LoadURLs(urls, ignoreMissing))
 }
 
 // MustLoadAll reads the content of multiple URLs or files in the given order into a
 // Properties struct. If 'ignoreMissing' is true then a 404 status code or missing file will
-// not be reported as error. Encoding sets the encoding for files. For the URLs please see
+// not be reported as an error. Encoding sets the encoding for files. For the URLs please see
 // LoadURL for the Content-Type header and the encoding. It panics on error.
 func MustLoadAll(names []string, enc Encoding, ignoreMissing bool) *Properties {
 	return must(LoadAll(names, enc, ignoreMissing))
@@ -289,7 +289,7 @@ func must(p *Properties, err error) *Properties {
 // expandName expands ${ENV_VAR} expressions in a name.
 // If the environment variable does not exist then it will be replaced
 // with an empty string. Malformed expressions like "${ENV_VAR" will
-// be reported as error.
+// be reported as an error.
 func expandName(name string) (string, error) {
 	return expand(name, []string{}, "${", "}", make(map[string]string))
 }
