@@ -103,6 +103,9 @@ func (p *Properties) Load(buf []byte, enc Encoding) error {
 // Get returns the expanded value for the given key if exists.
 // Otherwise, ok is false.
 func (p *Properties) Get(key string) (value string, ok bool) {
+	if p == nil {
+		return "", false
+	}
 	v, ok := p.m[key]
 	if p.DisableExpansion {
 		return v, ok
