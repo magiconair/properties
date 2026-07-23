@@ -195,6 +195,10 @@ func LoadMap(m map[string]string) *Properties {
 
 // LoadFile reads a file into a Properties struct.
 func LoadFile(filename string, enc Encoding) (*Properties, error) {
+	filename = strings.TrimSpace(filename)
+	if filename == "" {
+		return nil, fmt.Errorf("properties: empty filename")
+	}
 	l := &Loader{Encoding: enc}
 	return l.LoadAll([]string{filename})
 }
