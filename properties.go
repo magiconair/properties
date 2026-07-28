@@ -753,7 +753,7 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 		if p.WriteSeparator != "" {
 			sep = p.WriteSeparator
 		}
-		x, err = fmt.Fprintf(w, "%s%s%s\n", encode(key, " :", enc), sep, encode(value, "", enc))
+		x, err = fmt.Fprintf(w, "%s%s%s\n", encodeKey(key, enc), sep, encode(value, "", enc))
 		if err != nil {
 			return
 		}
@@ -884,6 +884,16 @@ func expand(s string, keys []string, prefix, postfix string, values map[string]s
 		}
 		s = s[:start] + new_val + s[end+1:]
 	}
+}
+
+// encodeKey escapes a key for Write. Beyond the value escapes, the lexer ends a
+// key at '=' and starts a comment at a leading '#'/'!' (lex.go), so escape those.
+func encodeKey(key string, enc Encoding) string {
+	s := encode(key, " :=", enc)
+	if strings.HasPrefix(key, "#") || strings.HasPrefix(key, "!") {
+		s = "\\" + s
+	}
+	return s
 }
 
 // encode encodes a UTF-8 string to ISO-8859-1 and escapes some characters.
