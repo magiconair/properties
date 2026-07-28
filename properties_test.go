@@ -934,6 +934,63 @@ func TestWrite(t *testing.T) {
 	}
 }
 
+// writeKeyTests checks that keys containing characters the lexer treats as
+// structural ('=' anywhere, a leading '#'/'!') are escaped by Write, while
+// characters that are only structural in a value are left alone.
+var writeKeyTests = []struct{ key, output string }{
+	{"a=b", "a\\=b = v\n"},
+	{"x=y=z", "x\\=y\\=z = v\n"},
+	{"#c", "\\#c = v\n"},
+	{"!d", "\\!d = v\n"},
+	// unchanged: ':' and space were already escaped, '#'/'!' mid-key are not structural
+	{"a:b", "a\\:b = v\n"},
+	{"a b", "a\\ b = v\n"},
+	{"a#b", "a#b = v\n"},
+	{"a!b", "a!b = v\n"},
+	{" #x", "\\ #x = v\n"},
+}
+
+func TestWriteKeyEscaping(t *testing.T) {
+	for _, test := range writeKeyTests {
+		p := NewProperties()
+		p.MustSet(test.key, "v")
+		for _, enc := range []Encoding{UTF8, ISO_8859_1} {
+			buf := new(bytes.Buffer)
+			_, err := p.Write(buf, enc)
+			assert.Equal(t, err, nil)
+			assert.Equal(t, buf.String(), test.output, fmt.Sprintf("key=%q enc=%v", test.key, enc))
+		}
+	}
+}
+
+// TestKeyRoundTrip verifies Load(Write(p)) preserves keys for every character
+// the lexer treats specially, closing the writer/parser gap behind issue #59.
+func TestKeyRoundTrip(t *testing.T) {
+	keys := []string{
+		"a=b", "x=y=z", "#c", "!d", // previously corrupted or dropped
+		"a#b", "a!b", "a:b", "a b", " x", // already worked, must stay correct
+		"k\\ey", "a\tb", "a\nb", "=lead", ":lead",
+	}
+	for _, key := range keys {
+		for _, enc := range []Encoding{UTF8, ISO_8859_1} {
+			p := NewProperties()
+			p.MustSet(key, "value")
+			buf := new(bytes.Buffer)
+			if _, err := p.Write(buf, enc); err != nil {
+				t.Fatalf("write key=%q: %v", key, err)
+			}
+			p2, err := Load(buf.Bytes(), enc)
+			if err != nil {
+				t.Fatalf("reload key=%q serialized=%q: %v", key, buf.String(), err)
+			}
+			got, ok := p2.Get(key)
+			if !ok || got != "value" {
+				t.Errorf("round-trip broken key=%q enc=%v serialized=%q present=%v got=%q", key, enc, buf.String(), ok, got)
+			}
+		}
+	}
+}
+
 func TestWriteComment(t *testing.T) {
 	for _, test := range writeCommentTests {
 		p, err := parse(test.input)
