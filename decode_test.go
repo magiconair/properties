@@ -298,3 +298,26 @@ func tm(t *testing.T, layout, s string) time.Time {
 	}
 	return tm
 }
+
+func testEncode(t *testing.T) {
+	type S struct {
+		A string `properties:"A"`
+		B string `properties:"B"`
+		C string `properties:"c"`
+	}
+	P := NewProperties()
+	V := S{"Foo", "bar", "baz"}
+	err := P.Encode(V)
+	if (err != nil) {
+		t.Fatalf("got %v want nil", err)
+	}
+	kv, _ := P.Get("A")	
+	if kv != "Foo" {
+		t.Fatalf("got '%s' want 'Foo'", kv)
+	}
+	kv, _ = P.Get("c")
+	if kv != "baz" {
+		t.Fatalf("got '%s' want 'baz'", kv)
+	}
+		
+}
