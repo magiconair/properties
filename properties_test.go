@@ -152,6 +152,7 @@ var writeTests = []struct {
 	{"key⌘ = value", "key\\u2318 = value\n", "ISO-8859-1"},
 	{"ke\\ \\:y = value", "ke\\ \\:y = value\n", "ISO-8859-1"},
 	{"ke\\\\y = val\\\\ue", "ke\\\\y = val\\\\ue\n", "ISO-8859-1"},
+	{"ke\\=y = value", "ke\\=y = value\n", "ISO-8859-1"},
 
 	// UTF-8 tests
 	{"key = value", "key = value\n", "UTF-8"},
@@ -160,6 +161,7 @@ var writeTests = []struct {
 	{"key⌘ = value⌘", "key⌘ = value⌘\n", "UTF-8"},
 	{"ke\\ \\:y = value", "ke\\ \\:y = value\n", "UTF-8"},
 	{"ke\\\\y = val\\\\ue", "ke\\\\y = val\\\\ue\n", "UTF-8"},
+	{"ke\\=y = value", "ke\\=y = value\n", "UTF-8"},
 }
 
 // ----------------------------------------------------------------------------
@@ -932,6 +934,22 @@ func TestWrite(t *testing.T) {
 		assert.Equal(t, n, len(test.output), fmt.Sprintf("input=%q expected=%q obtained=%q", test.input, test.output, s))
 		assert.Equal(t, s, test.output, fmt.Sprintf("input=%q expected=%q obtained=%q", test.input, test.output, s))
 	}
+}
+
+func TestWriteEscapesEqualsInKey(t *testing.T) {
+	p := NewProperties()
+	p.Set("a=b", "c")
+	buf := new(bytes.Buffer)
+	n, err := p.Write(buf, UTF8)
+	assert.Equal(t, err, nil)
+	s := buf.String()
+	assert.Equal(t, s, "a\\=b = c\n")
+	assert.Equal(t, n, len(s))
+
+	got, err := Load(buf.Bytes(), UTF8)
+	assert.Equal(t, err, nil)
+	assert.Equal(t, got.GetString("a=b", ""), "c")
+	assert.Equal(t, got.GetString("a", "missing"), "missing")
 }
 
 func TestWriteComment(t *testing.T) {
