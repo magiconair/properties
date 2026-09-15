@@ -221,6 +221,9 @@ Loop:
 		switch r = l.next(); {
 
 		case isEscape(r):
+			if l.skipLineContinuation() {
+				continue
+			}
 			err := l.scanEscapeSequence()
 			if err != nil {
 				return l.errorf(err.Error())
@@ -266,14 +269,12 @@ func lexValue(l *lexer) stateFn {
 	for {
 		switch r := l.next(); {
 		case isEscape(r):
-			if isEOL(l.peek()) {
-				l.next()
-				l.acceptRun(whitespace)
-			} else {
-				err := l.scanEscapeSequence()
-				if err != nil {
-					return l.errorf(err.Error())
-				}
+			if l.skipLineContinuation() {
+				continue
+			}
+			err := l.scanEscapeSequence()
+			if err != nil {
+				return l.errorf(err.Error())
 			}
 
 		case isEOL(r):
@@ -290,6 +291,23 @@ func lexValue(l *lexer) stateFn {
 			l.appendRune(r)
 		}
 	}
+}
+
+// skipLineContinuation consumes a Java properties line-continuation
+// (\ immediately before a line terminator). The backslash has already
+// been read. The terminator (\n, \r, or \r\n) and leading whitespace
+// on the next natural line are discarded. Returns false if this was
+// not a continuation (caller should treat \ as an escape instead).
+func (l *lexer) skipLineContinuation() bool {
+	if !isEOL(l.peek()) {
+		return false
+	}
+	r := l.next()
+	if r == '\r' && l.peek() == '\n' {
+		l.next()
+	}
+	l.acceptRun(whitespace)
+	return true
 }
 
 // scanEscapeSequence scans either one of the escaped characters
