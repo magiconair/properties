@@ -79,6 +79,13 @@ var complexTests = [][]string{
 	{"key = valueA,\\\n\f\f\fvalueB", "key", "valueA,valueB"}, // FF indent
 	{"key = valueA,\\\n\t\t\tvalueB", "key", "valueA,valueB"}, // TAB indent
 	{"key = valueA,\\\n \f\tvalueB", "key", "valueA,valueB"},  // mix indent
+	{"key = valueA,\\\r\n    valueB", "key", "valueA,valueB"}, // CRLF continuation
+	{"key = valueA,\\\r    valueB", "key", "valueA,valueB"},   // CR continuation
+	{"key = valueA,\\\r\n    valueB,\\\r\n    valueC", "key", "valueA,valueB,valueC"},
+	{" fruits                           apple, banana, pear, \\\n                                  cantaloupe, watermelon, \\\n                                  kiwi, mango", "fruits", "apple, banana, pear, cantaloupe, watermelon, kiwi, mango"},
+	{" fruits                           apple, banana, pear, \\\r\n                                  cantaloupe, watermelon, \\\r\n                                  kiwi, mango", "fruits", "apple, banana, pear, cantaloupe, watermelon, kiwi, mango"},
+	{"ke\\\n  y=value", "key", "value"},   // key continuation (LF)
+	{"ke\\\r\n  y=value", "key", "value"}, // key continuation (CRLF)
 
 	// comments
 	{"# this is a comment\n! and so is this\nkey1=value1\nkey#2=value#2\n\nkey!3=value!3\n# and another one\n! and the final one", "key1", "value1", "key#2", "value#2", "key!3", "value!3"},
