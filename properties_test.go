@@ -176,6 +176,9 @@ var writeCommentTests = []struct {
 	{"# comment\n\nkey = value", "# comment\nkey = value\n", "ISO-8859-1"},
 	{"# comment1\n# comment2\nkey = value", "# comment1\n# comment2\nkey = value\n", "ISO-8859-1"},
 	{"#comment1\nkey1 = value1\n#comment2\nkey2 = value2", "# comment1\nkey1 = value1\n\n# comment2\nkey2 = value2\n", "ISO-8859-1"},
+	{"key = value\n# comment", "key = value\n# comment\n", "ISO-8859-1"},
+	{"key = value\n# comment\n", "key = value\n# comment\n", "ISO-8859-1"},
+	{"# only", "# only\n", "ISO-8859-1"},
 	// prevent double encoding \\ -> \\\\ -> \\\\\\\\
 	{"# com\\\\ment\nkey = value", "# com\\\\ment\nkey = value\n", "ISO-8859-1"},
 
@@ -186,6 +189,7 @@ var writeCommentTests = []struct {
 	{"# comment⌘\n\nkey = value⌘", "# comment⌘\nkey = value⌘\n", "UTF-8"},
 	{"# comment1⌘\n# comment2⌘\nkey = value⌘", "# comment1⌘\n# comment2⌘\nkey = value⌘\n", "UTF-8"},
 	{"#comment1⌘\nkey1 = value1⌘\n#comment2⌘\nkey2 = value2⌘", "# comment1⌘\nkey1 = value1⌘\n\n# comment2⌘\nkey2 = value2⌘\n", "UTF-8"},
+	{"key = value⌘\n# comment⌘", "key = value⌘\n# comment⌘\n", "UTF-8"},
 	// prevent double encoding \\ -> \\\\ -> \\\\\\\\
 	{"# com\\\\ment⌘\nkey = value⌘", "# com\\\\ment⌘\nkey = value⌘\n", "UTF-8"},
 }

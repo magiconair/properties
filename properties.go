@@ -70,6 +70,9 @@ type Properties struct {
 	// Stores the comments per key.
 	c map[string][]string
 
+	// Comments after the last key (or a comments-only file).
+	trailing []string
+
 	// Stores the keys in order of appearance.
 	k []string
 
@@ -138,6 +141,7 @@ func (p *Properties) MustGet(key string) string {
 // ClearComments removes the comments for all keys.
 func (p *Properties) ClearComments() {
 	p.c = map[string][]string{}
+	p.trailing = nil
 }
 
 // ----------------------------------------------------------------------------
@@ -759,6 +763,24 @@ func (p *Properties) WriteComment(w io.Writer, prefix string, enc Encoding) (n i
 		}
 		n += x
 	}
+	if prefix != "" && len(p.trailing) > 0 {
+		allEmpty := true
+		for _, c := range p.trailing {
+			if c != "" {
+				allEmpty = false
+				break
+			}
+		}
+		if !allEmpty {
+			for _, c := range p.trailing {
+				x, err = fmt.Fprintf(w, "%s%s\n", prefix, c)
+				if err != nil {
+					return
+				}
+				n += x
+			}
+		}
+	}
 	return
 }
 
@@ -813,6 +835,9 @@ func (p *Properties) Merge(other *Properties) {
 	}
 	for k, v := range other.c {
 		p.c[k] = v
+	}
+	if len(other.trailing) > 0 {
+		p.trailing = append(p.trailing, other.trailing...)
 	}
 }
 
