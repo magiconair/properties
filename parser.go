@@ -25,6 +25,9 @@ func parse(input string) (properties *Properties, err error) {
 		token := p.expectOneOf(itemComment, itemKey, itemEOF)
 		switch token.typ {
 		case itemEOF:
+			if len(comments) > 0 {
+				properties.trailing = comments
+			}
 			goto done
 		case itemComment:
 			comments = append(comments, token.val)
