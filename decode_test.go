@@ -278,6 +278,40 @@ func TestDecodeMap(t *testing.T) {
 	testDecode(t, in, &X{}, out)
 }
 
+func TestDecodeRootMap(t *testing.T) {
+	in := `
+	foo=bar
+	nested.key=1
+	`
+	p, err := parse(in)
+	if err != nil {
+		t.Fatalf("got %v want nil", err)
+	}
+
+	var ss map[string]string
+	if err := p.Decode(&ss); err != nil {
+		t.Fatalf("got %v want nil", err)
+	}
+	wantSS := map[string]string{"foo": "bar", "nested.key": "1"}
+	if !reflect.DeepEqual(ss, wantSS) {
+		t.Fatalf("\ngot  %+v\nwant %+v", ss, wantSS)
+	}
+
+	var any map[string]interface{}
+	if err := p.Decode(&any); err != nil {
+		t.Fatalf("got %v want nil", err)
+	}
+	wantAny := map[string]interface{}{"foo": "bar", "nested.key": "1"}
+	if !reflect.DeepEqual(any, wantAny) {
+		t.Fatalf("\ngot  %+v\nwant %+v", any, wantAny)
+	}
+
+	var n int
+	if err := p.Decode(&n); err == nil {
+		t.Fatalf("got nil want error")
+	}
+}
+
 func testDecode(t *testing.T, in string, v, out interface{}) {
 	p, err := parse(in)
 	if err != nil {
