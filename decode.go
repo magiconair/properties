@@ -155,20 +155,6 @@ func dec(p *Properties, key string, def *string, opts map[string]string, v refle
 		return reflect.ValueOf(v).Convert(t), nil
 	}
 
-	// keydef returns the property key and the default value based on the
-	// name of the struct field and the options in the tag.
-	keydef := func(f reflect.StructField) (string, *string, map[string]string) {
-		_key, _opts := parseTag(f.Tag.Get("properties"))
-
-		var _def *string
-		if d, ok := _opts["default"]; ok {
-			_def = &d
-		}
-		if _key != "" {
-			return _key, _def, _opts
-		}
-		return f.Name, _def, _opts
-	}
 
 	switch {
 	case isDuration(t) || isTime(t) || isBool(t) || isString(t) || isFloat(t) || isInt(t) || isUint(t):
@@ -239,6 +225,87 @@ func dec(p *Properties, key string, def *string, opts map[string]string, v refle
 	return nil
 }
 
+// Encode adds information to the Properties object based on the exported
+// fields of the struct.
+//
+// In this first version, arrays and maps are unsupported.  Neither are times 
+// and durations
+
+func (p *Properties) Encode(x interface{}) error {
+	t, v := reflect.TypeOf(x), reflect.ValueOf(x)
+	if t.Kind() != reflect.Ptr || v.Elem().Type().Kind() != reflect.Struct {
+		return fmt.Errorf("not a pointer to struct: %s", t)
+	}
+	if err := enc(p, "", nil, nil, v); err != nil {
+		return err
+	}
+	return nil
+}
+
+func enc(p *Properties, key string, def *string, opts map[string]string, v reflect.Value) error {
+	t := v.Type()
+
+	conv := func(val reflect.Value, t reflect.Type) (s string, err error) {
+		switch {
+		case isString(t):
+			return s, nil
+		case isDuration(t):
+			v := val.Interface().(time.Duration)
+			return fmt.Sprintf("%s", v), nil
+		case isTime(t):
+			v := val.Interface().(time.Time)
+			s, err2 := v.MarshalText()
+			return fmt.Sprintf("%v", s), err2
+		case isBool(t):
+			return strconv.FormatBool(val.Bool()), nil
+		case isFloat(t):
+			return fmt.Sprintf("%f", val.Float()), nil
+		case isInt(t):
+			return fmt.Sprintf("%d", val.Int()), nil
+		case isUint(t):
+			return fmt.Sprintf("%d", val.Uint()), nil
+		default:
+			return "", fmt.Errorf("unsupported type %s", t)
+		}
+	}
+	switch {
+	case isDuration(t) || isTime(t) || isBool(t) || isString(t) || isFloat(t) || isInt(t) || isUint(t):
+		s, err := conv(v, t)
+		if nil != err {
+			return err
+		}
+		p.Set(key, s)
+	case isPtr(t):
+		return enc(p, key, def, opts, v.Elem())
+	case isStruct(t):
+		for i := 0; i < v.NumField(); i++ {
+			fv := v.Field(i)
+			fk, def, opts := keydef(t.Field(i))
+			if !fv.CanSet() {
+				return fmt.Errorf("cannot set %s", t.Field(i).Name)
+			}
+			if fk == "-" {
+				continue
+			}
+			if key != "" {
+				fk = key + "." + fk
+			}
+			if err := enc(p, fk, def, opts, fv); err != nil {
+				return err
+			}
+		}
+		return nil
+	// TODO:  Implement arrays and maps here.  This is not needed in the 
+	// minimal version and needs to be thought through.
+	// case isArray(t):
+	// case isStruct(t):
+	default:
+		return fmt.Errorf("unsupported type %s", t)
+	}
+	return nil
+
+}
+
 // split splits a string on sep, trims whitespace of elements
 // and omits empty elements
 func split(s string, sep string) []string {
@@ -268,6 +335,21 @@ func parseTag(tag string) (key string, opts map[string]string) {
 		}
 	}
 	return key, opts
+}
+
+// keydef returns the property key and the default value based on the
+// name of the struct field and the options in the tag.
+func keydef(f reflect.StructField) (string, *string, map[string]string) {
+	_key, _opts := parseTag(f.Tag.Get("properties"))
+
+	var _def *string
+	if d, ok := _opts["default"]; ok {
+		_def = &d
+	}
+	if _key != "" {
+		return _key, _def, _opts
+	}
+	return f.Name, _def, _opts
 }
 
 func isArray(t reflect.Type) bool    { return t.Kind() == reflect.Array || t.Kind() == reflect.Slice }
