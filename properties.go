@@ -104,6 +104,9 @@ func (p *Properties) Load(buf []byte, enc Encoding) error {
 // Otherwise, ok is false.
 func (p *Properties) Get(key string) (value string, ok bool) {
 	v, ok := p.m[key]
+	if v == "" {
+		return "", false
+	}
 	if p.DisableExpansion {
 		return v, ok
 	}
