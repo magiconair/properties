@@ -774,14 +774,17 @@ func (p *Properties) Map() map[string]string {
 // FilterFunc returns a copy of the properties which includes the values which passed all filters.
 func (p *Properties) FilterFunc(filters ...func(k, v string) bool) *Properties {
 	pp := NewProperties()
+	if len(filters) == 0 {
+		return pp
+	}
 outer:
 	for k, v := range p.m {
 		for _, f := range filters {
 			if !f(k, v) {
 				continue outer
 			}
-			pp.Set(k, v)
 		}
+		pp.Set(k, v)
 	}
 	return pp
 }
