@@ -920,9 +920,9 @@ func encodeIso(s string, special string) string {
 	for pos := 0; pos < len(s); {
 		switch r, w = utf8.DecodeRuneInString(s[pos:]); {
 		case pos == 0 && unicode.IsSpace(r): // escape leading whitespace
-			v += escape(r, " ")
+			v += escapeIso(r, " ")
 		case r < 1<<8: // single byte rune -> escape special chars only
-			v += escape(r, special)
+			v += escapeIso(r, special)
 		case r < 1<<16: // two byte rune -> unicode literal
 			v += fmt.Sprintf("\\u%04x", r)
 		default: // more than two bytes per rune -> can't encode
@@ -931,6 +931,22 @@ func encodeIso(s string, special string) string {
 		pos += w
 	}
 	return v
+}
+
+// escapeIso escapes a rune the same way as escape, but writes runes in
+// U+0080..U+00FF as a single byte: that is how Load reads them back with
+// ISO_8859_1 (one byte per rune). escape returns the UTF-8 encoding of
+// the rune, which is only correct for the UTF-8 writer.
+func escapeIso(r rune, special string) string {
+	switch r {
+	case '\f', '\n', '\r', '\t', '\\':
+		return escape(r, special)
+	default:
+		if strings.ContainsRune(special, r) {
+			return "\\" + string(r)
+		}
+		return string([]byte{byte(r)})
+	}
 }
 
 func escape(r rune, special string) string {
