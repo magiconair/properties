@@ -936,6 +936,25 @@ func TestWrite(t *testing.T) {
 	}
 }
 
+func TestWriteEscapesCommentMarkersInKey(t *testing.T) {
+	// A key that starts with a comment marker is read back as a comment, so
+	// the marker has to be escaped.
+	for _, key := range []string{"!a", "#b"} {
+		p := NewProperties()
+		p.Set(key, "v")
+
+		buf := new(bytes.Buffer)
+		n, err := p.Write(buf, UTF8)
+		assert.Equal(t, err, nil)
+		assert.Equal(t, n, buf.Len())
+
+		loaded, err := Load(buf.Bytes(), UTF8)
+		assert.Equal(t, err, nil)
+		assert.Equal(t, loaded.Len(), 1)
+		assertKeyValues(t, "", loaded, key, "v")
+	}
+}
+
 func TestWriteEscapesEqualsInKey(t *testing.T) {
 	p := NewProperties()
 	p.Set("a=b", "c")
