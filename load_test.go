@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/magiconair/properties/assert"
 )
@@ -24,6 +26,23 @@ func TestEncoding(t *testing.T) {
 	}
 	if got, want := ISO_8859_1, Encoding(2); got != want {
 		t.Fatalf("got encoding %d want %d", got, want)
+	}
+}
+
+func TestLoadStringErrorDoesNotLeakGoroutines(t *testing.T) {
+	before := runtime.NumGoroutine()
+	for i := 0; i < 100; i++ {
+		for _, s := range []string{"=", `key = \u12`} {
+			_, err := LoadString(s)
+			assert.Equal(t, err != nil, true, s)
+		}
+	}
+	deadline := time.Now().Add(time.Second)
+	for runtime.NumGoroutine() > before && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if got := runtime.NumGoroutine(); got > before {
+		t.Fatalf("got %d goroutines want at most %d", got, before)
 	}
 }
 

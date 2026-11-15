@@ -15,6 +15,7 @@ type parser struct {
 
 func parse(input string) (properties *Properties, err error) {
 	p := &parser{lex: lex(input)}
+	defer p.drain()
 	defer p.recover(&err)
 
 	properties = NewProperties()
@@ -52,6 +53,11 @@ func parse(input string) (properties *Properties, err error) {
 
 done:
 	return properties, nil
+}
+
+func (p *parser) drain() {
+	for range p.lex.items {
+	}
 }
 
 func (p *parser) errorf(format string, args ...interface{}) {

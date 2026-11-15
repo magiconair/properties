@@ -162,6 +162,7 @@ func lex(input string) *lexer {
 
 // run runs the state machine for the lexer.
 func (l *lexer) run() {
+	defer close(l.items)
 	for l.state = lexBeforeKey(l); l.state != nil; {
 		l.state = l.state(l)
 	}
