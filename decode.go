@@ -46,6 +46,11 @@ import (
 // name as map key. The prefix (without dot) can be overridden in the field's
 // tag. Default values are not supported.
 //
+// A pointer to a map with string keys is also accepted. Each property is stored
+// under its full key. map[string]string and map[string]interface{} receive the
+// expanded string values; other value types use the same conversions as struct
+// fields.
+//
 // Examples:
 //
 //	// Field is ignored.
@@ -93,11 +98,47 @@ import (
 //	Field map[string]string `properties:"myName"`
 func (p *Properties) Decode(x interface{}) error {
 	t, v := reflect.TypeOf(x), reflect.ValueOf(x)
-	if t.Kind() != reflect.Ptr || v.Elem().Type().Kind() != reflect.Struct {
-		return fmt.Errorf("not a pointer to struct: %s", t)
+	if t.Kind() != reflect.Ptr {
+		return fmt.Errorf("not a pointer to struct or map: %s", t)
 	}
-	if err := dec(p, "", nil, nil, v); err != nil {
-		return err
+	switch v.Elem().Kind() {
+	case reflect.Struct:
+		return dec(p, "", nil, nil, v)
+	case reflect.Map:
+		return decodeRootMap(p, v.Elem())
+	default:
+		return fmt.Errorf("not a pointer to struct or map: %s", t)
+	}
+}
+
+func decodeRootMap(p *Properties, v reflect.Value) error {
+	t := v.Type()
+	if t.Key().Kind() != reflect.String {
+		return fmt.Errorf("map key must be string: %s", t)
+	}
+	if v.IsNil() {
+		v.Set(reflect.MakeMap(t))
+	}
+	valT := t.Elem()
+	for _, k := range p.Keys() {
+		s, ok := p.Get(k)
+		if !ok {
+			continue
+		}
+		var val reflect.Value
+		switch {
+		case valT.Kind() == reflect.String:
+			val = reflect.ValueOf(s)
+		case valT.Kind() == reflect.Interface && valT.NumMethod() == 0:
+			val = reflect.ValueOf(s)
+		default:
+			mv := reflect.New(valT)
+			if err := dec(p, k, &s, nil, mv); err != nil {
+				return err
+			}
+			val = mv.Elem()
+		}
+		v.SetMapIndex(reflect.ValueOf(k), val.Convert(valT))
 	}
 	return nil
 }
