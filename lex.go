@@ -200,7 +200,8 @@ func lexComment(l *lexer) stateFn {
 	for {
 		switch r := l.next(); {
 		case isEOF(r):
-			l.ignore()
+			// Keep a comment that runs to EOF (no trailing newline).
+			l.emit(itemComment)
 			l.emit(itemEOF)
 			return nil
 		case isEOL(r):
