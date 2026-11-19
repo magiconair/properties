@@ -307,8 +307,9 @@ func (l *lexer) scanEscapeSequence() error {
 	case isEOF(r):
 		return fmt.Errorf("premature EOF")
 
-	// silently drop the escape character and append the rune as is
+	// Keep the backslash for unknown escapes so values like \1 round-trip.
 	default:
+		l.appendRune('\\')
 		l.appendRune(r)
 		return nil
 	}
@@ -386,7 +387,7 @@ func isEscape(r rune) bool {
 // isEscapedCharacter reports whether we are at one of the characters that need escaping.
 // The escape character has already been consumed.
 func isEscapedCharacter(r rune) bool {
-	return strings.ContainsRune(" :=fnrt", r)
+	return strings.ContainsRune(" :=\\fnrt", r)
 }
 
 // isWhitespace reports whether the rune is a whitespace character.
